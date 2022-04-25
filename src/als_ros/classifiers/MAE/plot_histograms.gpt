@@ -1,0 +1,30 @@
+#! /bin/gnuplot
+
+set colors classic
+set key top Right
+set title font "Arial, 14"
+set tics font "Arial, 14"
+set xlabel font "Arial, 14"
+set ylabel font "Arial, 14"
+set key font "Arial, 14"
+set grid
+set size ratio 0.5 1.0
+set xlabel "MAE [m]"
+set ylabel "Frequency"
+set style data histograms
+set style histogram cluster
+set style fill solid 0.7 border lt -1
+
+binwidth = 0.01 # histogram bin width
+set xrange [0.0 : 0.5] # [0.0 : max residual error]
+
+bin(x, width) = width * floor(x / width)
+
+plot "true_positive_maes.txt" u (bin($1, binwidth)):(1.0) smooth freq with boxes t "True positive", \
+     "false_negative_maes.txt" u (bin($1, binwidth)):(1.0) smooth freq with boxes t "False negative"
+
+# plot "false_positive_maes.txt" u (bin($1, binwidth)):(1.0) smooth freq with boxes t "Flase positive", \
+#      "true_negative_maes.txt" u (bin($1, binwidth)):(1.0) smooth freq with boxes t "True negative"
+
+pause -1
+

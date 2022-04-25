@@ -1,0 +1,269 @@
+<!-- mcl.launch -->
+<launch >
+    <!-- ROS parameters -->
+
+    <!-- Node name -->
+    <arg name="node_name" default="mcl" />
+
+    <!-- Input messages -->
+    <arg name="scan_name" default="/hk/base_front_scan" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="odom_name" default="/hk/switched_odom" /> <!-- nav_msgs::Odometry -->
+    <arg name="map_name" default="/map" /> <!-- nav_msgs::OccupancyGrid -->
+
+    <!-- Output messages -->
+    <arg name="pose_name" default="/mcl_pose" /> <!-- geometry_msgs::PoseStamped -->
+    <arg name="particles_name" default="/mcl_particles" /> <!-- geometry_msgs::PoseArray -->
+    <arg name="unknown_scan_name" default="/unknown_scan" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="residual_errors_name" default="/residual_errors" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="reliability_marker_name" default="/reliability_marker_name" /> <!-- visualization_msgs::Marker -->
+
+    <!-- Output messages from GL pose sampler -->
+    <arg name="gl_sampled_poses_name" default="/gl_sampled_poses" /> <!-- geometry_msgs::PoseArray -->
+    <arg name="local_map_name" default="/gl_local_map" /> <!-- nav_msgs::OccupancyGrid -->
+    <arg name="sdf_keypoints_name" default="/gl_sdf_keypoints" /> <!-- visualization_msgs::Marker -->
+    <arg name="local_sdf_keypoints_name" default="/gl_local_sdf_keypoints" /> <!-- visualization_msgs::Marker -->
+
+    <!-- TF frames -->
+    <arg name="laser_frame" default="base_front_range_sensor_link" />
+    <arg name="base_link_frame" default="base_footprint" />
+    <arg name="map_frame" default="map" />
+    <arg name="odom_frame" default="odom" />
+
+    <!-- If broadcast_tf is true,
+         the localizer broadcasts transformation between the map and odometry frames. -->
+    <arg name="broadcast_tf" default="true" />
+
+    <!-- If use_odom_tf is false, transformation from the map to base link is directly broadcast. -->
+    <arg name="use_odom_tf" default="true" />
+
+
+    <!-- MCL parameters -->
+
+    <!-- 0: likelihood field model, 1, beam model, 2: class conditional measurement model
+         The class conditional measurement model is highly recommended for the position tracking. -->
+    <arg name="measurement_model_type" default="2" />
+
+    <!-- Numbers of particles
+         In this MCL package, the numbers of the particles are constant. -->
+    <arg name="particle_num" default="300" />
+
+    <!-- If use_augmented_mcl is true, augmented MCL is used.
+         Augmented MCL adds random particles when doing resampling if MCL might fail localization.
+         alpha_slow and alpha_fast are parameters for augmented MCL (0 < alpha_slow << alpha_fast < 1).
+         If add_random_particles_in_resampling is true, random particles are also added in resampling.
+         (random_particles_rate * particle_num) particles are added
+         if add_random_particles_in_resampling is true. -->
+    <arg name="use_augmented_mcl" default="false" />
+    <arg name="alpha_slow" default="0.001" />
+    <arg name="alpha_fast" default="0.99" />
+    <arg name="add_random_particles_in_resampling" default="true" />
+    <arg name="random_particles_rate" default="0.1" />
+
+    <!--If use_omni_directional_model is true, the omnidirectional motion model is used.
+        A default motion model is the differential drive model. -->
+    <arg name="use_omni_directional_model" default="false" />
+
+    <!-- If reject_unknown_scan is true,
+         scans that might measure unknown obstacles are rejected before likelihood calculation.
+         The scan rejection will perform when the likelihood field or beam models is used.
+         If publish_unknown_scan is true, the rejected scan is published.
+         unknown_scan_prob_threshold included from 0 to 1 is a threshold to reject the unknown scan. -->
+    <arg name="reject_unknown_scan" default="false" />
+    <arg name="publish_unknown_scan" default="true" />
+    <arg name="unknown_scan_prob_threshold" default="0.9" />
+
+    <!-- If publish_residual_errors is true,
+         the residual errors from the estimated pose will be published. -->
+    <arg name="publish_residual_errors" default="true" />
+
+    <!-- Dense measurements must not be used for localization. 
+         You can control how much measurements are skipped by scan_step.
+         scan_step must be larger than 0.
+         E.e., if you use Hokuyo LiDAR TOP-URG, it can measure 1081 points
+         and scan_step = 10 or 5 is recommended. -->
+    <arg name="scan_step" default="5" />
+
+    <!-- The measurement models' parameters
+         The sum of z_hit, z_max, and z_rand must be 1
+         when the likelihood field and class coditional measurment models are used. 
+         The sum of z_hit, z_short, z_max, and z_rand must be 1 when the beam model is used. -->
+    <arg name="z_hit" default="0.9" />
+    <arg name="z_short" default="0.2" />
+    <arg name="z_max" default="0.05" />
+    <arg name="z_rand" default="0.05" />
+    <arg name="var_hit" default="0.04" />
+    <arg name="lambda_short" default="1.0" />
+    <arg name="lambda_unknown" default="0.01" />
+
+    <!-- A parameter for the class conditional measurement model. 0.5 is recommended. -->
+    <arg name="known_class_prior" default="0.5" />
+
+    <!-- If rate of the effective sample size is less than resample_threshold_ess,
+         resampling will be performed. -->
+    <arg name="resample_threshold_ess" default="0.5" />
+
+    <!-- If estimate_reliability is true, the reliability estimation is performed. -->
+    <arg name="estimate_reliability" default="true" />
+
+    <!-- A localization failure detector is used to perform the reliability estimation.
+         0: mean absolute error.
+         Note that only mean-absolute-error-based classifier is supported in the current version. -->
+    <arg name="classifier_type" default="0" />
+
+    <!-- Mean absolute error (MAE)-based localization failure detector. 
+         If classifier_type = 0, these parameters must be appropriately set. -->
+    <arg name="mae_classifier_dir" default="$(find als_ros)/classifiers/MAE/" />
+    <arg name="mae_max_residual_error" default="0.5" />
+    <arg name="mae_histogram_bin_width" default="0.05" />
+
+    <!-- If use_gl_pose_sampler is true, global-localization-based pose sampler is used.
+         The sampled poses are integrated to the mcl estimate via importance sampling. -->
+    <arg name="use_gl_pose_sampler" default="false" />
+
+    <!-- Time threshold to fuse the global-localization (GL)-based pose sampling result.
+         If time difference between the laser scan used for MCL and GL pose sampling result exceeds the threshold,
+         the pose sampling result is not used. -->
+    <arg name="gl_sampled_pose_time_th" default="1.0" />
+
+    <!-- Assume that the predictive distribution can be approximately represented by the Gaussian mixture model (GMM)
+         based on the particles updated by the motion model.
+         GMM is used to calculate likelihood of the poses drawn by the GL pose sampler.
+         Following variances are parameters for GMM. -->
+    <arg name="gmm_positional_variance" default="0.01" />
+    <arg name="gmm_angular_variance" default="0.01" />
+
+    <!-- If use_mrf_failure_detector is true, Markov-random-fields-based localization failure detector is used.
+         Note that Note that the failure detector just publishes failure probability. -->
+    <arg name="use_mrf_failure_detector" default="false" />
+
+    <!-- localization Hz -->
+    <arg name="localization_hz" default="10.0" />
+
+    <!-- Initial pose (x [m], y [m], yaw [deg]) -->
+    <rosparam param="/$(arg node_name)/initial_pose" > [0.0, 0.0, 0.0] </rosparam >
+    <!-- <rosparam param="/$(arg node_name)/initial_pose" > [5.0, -19.0, 180.0] </rosparam > -->
+
+    <!-- Parameters used for determining initial particles distribution (x, y, yaw) -->
+    <rosparam param="/$(arg node_name)/initial_noise" > [0.02, 0.02, 0.01] </rosparam >
+
+    <!-- Parameters used for randam particles in resampling (x, y, yaw).
+         These parameters are used when use_augmented_mcl or add_random_particles_in_resampling is true. -->
+    <rosparam param="/$(arg node_name)/random_particles_noise" > [0.05, 0.05, 0.1] </rosparam >
+
+    <!-- Motion noises -->
+    <rosparam param="/$(arg node_name)/odom_noise_ddm" > [1.0, 0.5, 0.5, 1.5] </rosparam >
+    <!-- <rosparam param="/$(arg node_name)/odom_noise_ddm" > [0.3, 0.1, 0.1, 0.3] </rosparam > -->
+    <rosparam param="/$(arg node_name)/odom_noise_odm" > [1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 1.0] </rosparam >
+
+    <!-- Resampling thresholds to delta x, y, distance, yaw, and time, respectively. 
+         If all parameters are set to minus, these thresholds are ignored. -->
+    <rosparam param="/$(arg node_name)/resample_thresholds" > [0.2, 0.2, 0.2, 0.02, -99999.0] </rosparam >
+
+
+
+
+    <!-- include other programs -->
+<!--
+    <include file="$(find als_ros)/launch/robot_tf.launch" >
+        <arg name="laser_frame" value="$(arg laser_frame)" />
+        <arg name="base_link_frame" value="$(arg base_link_frame)" />
+    </include >
+ -->
+
+<!--
+    <include file="$(find als_ros)/launch/map_server.launch" >
+        <arg name="map_name" value="$(arg map_name)" />
+    </include >
+ -->
+
+    <include file="$(find als_ros)/launch/gl_pose_sampler.launch" if="$(arg use_gl_pose_sampler)" >
+        <arg name="map_name" value="$(arg map_name)" />
+        <arg name="scan_name" value="$(arg scan_name)" />
+        <arg name="odom_name" value="$(arg odom_name)" />
+
+        <arg name="poses_name" value="$(arg gl_sampled_poses_name)" />
+        <arg name="local_map_name" value="$(arg local_map_name)" />
+        <arg name="sdf_keypoints_name" value="$(arg sdf_keypoints_name)" />
+        <arg name="local_sdf_keypoints_name" value="$(arg local_sdf_keypoints_name)" />
+
+        <arg name="map_frame" value="$(arg map_frame)" />
+        <arg name="odom_frame" value="$(arg odom_frame)" />
+        <arg name="base_link_frame" value="$(arg base_link_frame)" />
+        <arg name="laser_frame" value="$(arg laser_frame)" />
+    </include >
+
+    <include file="$(find als_ros)/launch/mrf_failure_detector.launch" if="$(arg use_mrf_failure_detector)" >
+        <arg name="residual_errors_name" value="$(arg residual_errors_name)" />
+
+        <arg name="marker_frame" value="$(arg base_link_frame)" />
+    </include >
+
+
+
+
+    <!-- MCL node -->
+    <node name="$(arg node_name)" pkg="als_ros" type="mcl" output="screen" >
+        <param name="measurement_model_type" value="$(arg measurement_model_type)" type="int" />
+
+        <param name="scan_name" value="$(arg scan_name)" type="string" />
+        <param name="odom_name" value="$(arg odom_name)" type="string" />
+        <param name="map_name" value="$(arg map_name)" type="string" />
+        <param name="pose_name" value="$(arg pose_name)" type="string" />
+        <param name="particles_name" value="$(arg particles_name)" type="string" />
+        <param name="unknown_scan_name" value="$(arg unknown_scan_name)" type="string" />
+        <param name="residual_errors_name" value="$(arg residual_errors_name)" type="string" />
+        <param name="gl_sampled_poses_name" value="$(arg gl_sampled_poses_name)" type="string" />
+        <param name="reliability_marker_name" value="$(arg reliability_marker_name)" type="string" />
+
+        <param name="laser_frame" value="$(arg laser_frame)" type="string" />
+        <param name="base_link_frame" value="$(arg base_link_frame)" type="string" />
+        <param name="map_frame" value="$(arg map_frame)" type="string" />
+        <param name="odom_frame" value="$(arg odom_frame)" type="string" />
+
+        <param name="broadcast_tf" value="$(arg broadcast_tf)" type="bool" />
+        <param name="use_odom_tf" value="$(arg use_odom_tf)" type="bool" />
+
+        <param name="particle_num" value="$(arg particle_num)" type="int" />
+
+        <param name="use_augmented_mcl" value="$(arg use_augmented_mcl)" type="bool" />
+        <param name="alpha_slow" value="$(arg alpha_slow)" type="double" />
+        <param name="alpha_fast" value="$(arg alpha_fast)" type="double" />
+        <param name="add_random_particles_in_resampling" value="$(arg add_random_particles_in_resampling)" type="bool" />
+        <param name="random_particles_rate" value="$(arg random_particles_rate)" type="double" />
+
+        <param name="use_omni_directional_model" value="$(arg use_omni_directional_model)" type="bool" />
+
+        <param name="reject_unknown_scan" value="$(arg reject_unknown_scan)" type="bool" />
+        <param name="publish_unknown_scan" value="$(arg publish_unknown_scan)" type="bool" />
+        <param name="unknown_scan_prob_threshold" value="$(arg unknown_scan_prob_threshold)" type="double" />
+
+        <param name="publish_residual_errors" value="$(arg publish_residual_errors)" type="bool" />
+
+        <param name="scan_step" value="$(arg scan_step)" type="int" />
+
+        <param name="z_hit" value="$(arg z_hit)" type="double" />
+        <param name="z_short" value="$(arg z_short)" type="double" />
+        <param name="z_max" value="$(arg z_max)" type="double" />
+        <param name="z_rand" value="$(arg z_rand)" type="double" />
+        <param name="var_hit" value="$(arg var_hit)" type="double" />
+        <param name="lambda_short" value="$(arg lambda_short)" type="double" />
+        <param name="lambda_unknown" value="$(arg lambda_unknown)" type="double" />
+
+        <param name="known_class_prior" value="$(arg known_class_prior)" type="double" />
+
+        <param name="resample_threshold_ess" value="$(arg resample_threshold_ess)" type="double" />
+
+        <param name="estimate_reliability" value="$(arg estimate_reliability)" type="bool" />
+        <param name="classifier_type" value="$(arg classifier_type)" type="int" />
+        <param name="mae_classifier_dir" value="$(arg mae_classifier_dir)" type="string" />
+        <param name="mae_max_residual_error" value="$(arg mae_max_residual_error)" type="double" />
+        <param name="mae_histogram_bin_width" value="$(arg mae_histogram_bin_width)" type="double" />
+
+        <param name="use_gl_pose_sampler" value="$(arg use_gl_pose_sampler)" type="bool" />
+        <param name="gl_sampled_pose_time_th" value="$(arg gl_sampled_pose_time_th)" type="double" />
+        <param name="gmm_positional_variance" value="$(arg gmm_positional_variance)" type="double" />
+        <param name="gmm_angular_variance" value="$(arg gmm_angular_variance)" type="double" />
+
+        <param name="localization_hz" value="$(arg localization_hz)" type="double" />
+    </node >
+</launch >

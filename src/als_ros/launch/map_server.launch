@@ -1,0 +1,9 @@
+<!-- map_server.launch -->
+<launch >
+    <arg name="map_name" default="/map" />
+    <arg name="map_yaml_file" default="/home/akai/Dropbox/git/AutoNavi/ros/maps/nic_garage/ogm.yaml" />
+
+    <node name="amcl_map_server" pkg="map_server" type="map_server" args="$(arg map_yaml_file)" >
+        <remap from="/map" to="$(arg map_name)" />
+    </node >
+</launch >

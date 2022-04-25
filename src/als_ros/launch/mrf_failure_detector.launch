@@ -1,0 +1,71 @@
+<!-- mrf_failure_detector.launch -->
+<launch >
+    <arg name="node_name" default="mrf_failure_detector" />
+
+    <!-- Input message -->
+    <arg name="residual_errors_name" default="/residual_errors" /> <!-- sensor_msgs::LaserScan -->
+
+    <!-- Output messages -->
+    <arg name="failure_probability_name" default="/failure_probability" /> <!-- geometry_msgs::Vector3Stamped -->
+    <arg name="aligned_scan_mrf" default="/aligned_scan_mrf" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="misaligned_scan_mrf" default="/misaligned_scan_mrf" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="unknown_scan_mrf" default="/unknown_scan_mrf" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="publish_classified_scans" default="true" />
+
+    <arg name="failure_probability_marker_name" default="/failure_probability_marker_name" />
+    <arg name="publish_failure_probability_marker" default="true" />
+    <arg name="marker_frame" default="base_link" />
+
+    <!-- If publish_classified_scans is true, the above scan messages will be published. -->
+
+    <!-- Parameters related to the likelihood distributions -->
+    <arg name="normal_distribution_mean" default="0.0" />
+    <arg name="normal_distribution_var" default="0.01" />
+    <arg name="exponential_distribution_lambda" default="2.0" />
+    <arg name="max_residual_error" default="1.0" />
+    <arg name="residual_error_resolution" default="0.05" />
+
+    <!-- Parameters related to the failure probability calculation -->
+    <arg name="min_valid_residual_errors_num" default="10" />
+    <arg name="max_lpb_computation_num" default="1000" />
+    <arg name="sampling_num" default="1000" />
+    <arg name="misalignment_ratio_threshold" default="0.1" />
+    <arg name="unknown_ratio_threshold" default="0.7" />
+
+    <!-- Processing Hz for the failure detection -->
+    <arg name="failure_detection_hz" default="5.0" />
+
+    <!-- Parameters related to the failure probability calculation -->
+    <rosparam param="/$(arg node_name)/transition_probability_matrix" > [0.8, 0.0, 0.2, 0.0, 0.8, 0.2, 0.333333, 0.333333, 0.333333] </rosparam >
+
+
+
+
+    <!-- Failure detector node -->
+    <node name="$(arg node_name)" pkg="als_ros" type="mrf_failure_detector" output="screen" >
+        <param name="residual_errors_name" value="$(arg residual_errors_name)" type="string" />
+
+        <param name="failure_probability_name" value="$(arg failure_probability_name)" type="string" />
+        <param name="aligned_scan_mrf" value="$(arg aligned_scan_mrf)" type="string" />
+        <param name="misaligned_scan_mrf" value="$(arg misaligned_scan_mrf)" type="string" />
+        <param name="unknown_scan_mrf" value="$(arg unknown_scan_mrf)" type="string" />
+        <param name="publish_classified_scans" value="$(arg publish_classified_scans)" type="bool" />
+
+        <param name="failure_probability_marker_name" value="$(arg failure_probability_marker_name)" type="string" />
+        <param name="publish_failure_probability_marker" value="$(arg publish_failure_probability_marker)" type="bool" />
+        <param name="marker_frame" value="$(arg marker_frame)" type="string" />
+
+        <param name="normal_distribution_mean" value="$(arg normal_distribution_mean)" type="double" />
+        <param name="normal_distribution_var" value="$(arg normal_distribution_var)" type="double" />
+        <param name="exponential_distribution_lambda" value="$(arg exponential_distribution_lambda)" type="double" />
+        <param name="max_residual_error" value="$(arg max_residual_error)" type="double" />
+        <param name="residual_error_resolution" value="$(arg residual_error_resolution)" type="double" />
+        <param name="min_valid_residual_errors_num" value="$(arg min_valid_residual_errors_num)" type="int" />
+        <param name="max_lpb_computation_num" value="$(arg max_lpb_computation_num)" type="int" />
+        <param name="sampling_num" value="$(arg sampling_num)" type="int" />
+        <param name="misalignment_ratio_threshold" value="$(arg misalignment_ratio_threshold)" type="double" />
+        <param name="unknown_ratio_threshold" value="$(arg unknown_ratio_threshold)" type="double" />
+
+        <param name="failure_detection_hz" value="$(arg failure_detection_hz)" type="double" />
+    </node >
+</launch >

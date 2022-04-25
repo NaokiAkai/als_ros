@@ -1,0 +1,94 @@
+<!-- gl_pose_sampler.launch -->
+<launch >
+    <arg name="node_name" default="gl_pose_sampler" />
+
+    <!-- Input messages -->
+    <arg name="map_name" default="/map" /> <!-- nav_msgs::OccupancyGrid -->
+    <arg name="scan_name" default="/scan" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="odom_name" default="/odom" /> <!-- nav_msgs::Odometry -->
+
+    <!-- Output messages -->
+    <arg name="poses_name" default="/gl_sampled_poses" /> <!-- geometry_msgs::PoseArray -->
+    <arg name="local_map_name" default="/gl_local_map" /> <!-- nav_msgs::OccupancyGrid -->
+    <arg name="sdf_keypoints_name" default="/gl_sdf_keypoints" /> <!-- visualization_msgs::Marker -->
+    <arg name="local_sdf_keypoints_name" default="/gl_local_sdf_keypoints" /> <!-- visualization_msgs::Marker -->
+
+    <!-- TF frames -->
+    <arg name="map_frame" default="map" />
+    <arg name="odom_frame" default="odom" />
+    <arg name="base_link_frame" default="base_link" />
+    <arg name="laser_frame" default="laser" />
+
+    <!-- Global localization parameters -->
+
+    <!-- Number of scans used for global localization -->
+    <arg name="key_scans_num" default="3" />
+
+    <!-- Key scan interval for distance and angle
+         These units are meters and degrees.
+         If these values are less than 0, global localization is performed for every scan. -->
+    <arg name="key_scan_interval_dist" default="0.2" />
+    <arg name="key_scan_interval_yaw" default="5.0" />
+
+    <!-- Threshold to detect keypoints 
+         Keypoints are easily detected if this value is close to zero, but it must be larger than 0. -->
+    <arg name="gradient_square_th" default="0.01" />
+
+    <!-- The minimum distance between keypoints and mapped obstacles in meters -->
+    <arg name="keypoints_min_dist_from_map" default="0.5" />
+
+    <!-- Window size to calculate feature of keypoints in meters -->
+    <arg name="sdf_feature_window_size" default="1.0" />
+
+    <!-- Threshold to difference between average values of distance fields within the window
+         This is used for corresponding keypoint search and correspondences are easily found if this value is large. -->
+    <arg name="average_sdf_delta_th" default="0.01" />
+
+    <!-- Add random and/or opposite direction samples when global localization candidate poses are found -->
+    <arg name="add_random_samples" default="true" />
+    <arg name="add_opposite_samples" default="true" />
+
+    <!-- Number of random samples -->
+    <arg name="random_samples_num" default="20" />
+
+    <!-- Positional and angular noises for the random sampling -->
+    <arg name="positional_random_noise" default="0.5" />
+    <arg name="angular_random_noise" default="0.3" />
+
+    <!-- Threshold to matching rate between scan measurements and a map
+         Random samples are easily generated if this value close to 0.
+         This value is ignored if less than 0. -->
+    <arg name="matching_rate_th" default="0.03" />
+
+
+
+    <!-- gl pose sampler node -->
+    <node name="$(arg node_name)" pkg="als_ros" type="gl_pose_sampler" output="log" >
+        <param name="map_name" value="$(arg map_name)" type="string" />
+        <param name="scan_name" value="$(arg scan_name)" type="string" />
+        <param name="odom_name" value="$(arg odom_name)" type="string" />
+        <param name="poses_name" value="$(arg poses_name)" type="string" />
+        <param name="local_map_name" value="$(arg local_map_name)" type="string" />
+        <param name="sdf_keypoints_name" value="$(arg sdf_keypoints_name)" type="string" />
+        <param name="local_sdf_keypoints_name" value="$(arg local_sdf_keypoints_name)" type="string" />
+
+        <param name="map_frame" value="$(arg map_frame)" type="string" />
+        <param name="odom_frame" value="$(arg odom_frame)" type="string" />
+        <param name="base_link_frame" value="$(arg base_link_frame)" type="string" />
+        <param name="laser_frame" value="$(arg laser_frame)" type="string" />
+
+        <param name="key_scans_num" value="$(arg key_scans_num)" type="int" />
+        <param name="key_scan_interval_dist" value="$(arg key_scan_interval_dist)" type="double" />
+        <param name="key_scan_interval_yaw" value="$(arg key_scan_interval_yaw)" type="double" />
+        <param name="gradient_square_th" value="$(arg gradient_square_th)" type="double" />
+        <param name="keypoints_min_dist_from_map" value="$(arg keypoints_min_dist_from_map)" type="double" />
+        <param name="sdf_feature_window_size" value="$(arg sdf_feature_window_size)" type="double" />
+        <param name="average_sdf_delta_th" value="$(arg average_sdf_delta_th)" type="double" />
+        <param name="add_random_samples" value="$(arg add_random_samples)" type="bool" />
+        <param name="add_opposite_samples" value="$(arg add_opposite_samples)" type="bool" />
+        <param name="random_samples_num" value="$(arg random_samples_num)" type="int" />
+        <param name="positional_random_noise" value="$(arg positional_random_noise)" type="double" />
+        <param name="angular_random_noise" value="$(arg angular_random_noise)" type="double" />
+        <param name="matching_rate_th" value="$(arg matching_rate_th)" type="double" />
+    </node >
+</launch >

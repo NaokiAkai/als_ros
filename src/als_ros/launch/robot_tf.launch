@@ -1,0 +1,15 @@
+<!-- robot_tf.launch -->
+<launch >
+    <arg name="laser_frame" default="laser" />
+    <arg name="base_link_frame" default="base_link" />
+    <arg name="base_link_to_laser_x" default="0.0" />
+    <arg name="base_link_to_laser_y" default="0.0" />
+    <arg name="base_link_to_laser_yaw" default="0.0" />
+    <arg name="publish_time_ms" default="100.0" />
+
+    <node name="base_link_to_laser" pkg="tf" type="static_transform_publisher" output="log"
+        args="$(arg base_link_to_laser_x) $(arg base_link_to_laser_y) 0.0 
+              $(arg base_link_to_laser_yaw) 0.0 0.0
+              $(arg base_link_frame) $(arg laser_frame) $(arg publish_time_ms)"
+    />
+</launch >

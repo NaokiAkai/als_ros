@@ -1,3 +1,11 @@
+# Build space
+build
+build/*
+devel
+devel/*
+make.sh
+clean.sh
+
 # Prerequisites
 *.d
 

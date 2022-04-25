@@ -1,0 +1,68 @@
+<!-- classifier_dataset_generator.launch -->
+<launch >
+    <!-- Set your map yaml file
+         Map server published this map with the given name. -->
+    <arg name="map_yaml_file" default="/home/akai/Dropbox/git/AutoNavi/ros/maps/nic_garage/ogm.yaml" />
+    <arg name="map_name" default="/map" />
+
+    <!-- Number of generated samples -->
+    <arg name="generate_sample_num" default="2000" />
+
+    <!-- Save directory for the generated data -->
+    <arg name="save_dir" default="/tmp/classifier_dataset_test/" />
+
+    <!-- Number of moving obstacles
+         Moving obstacles are stimulated when the dataset is created if the number is larger than 0. -->
+        <arg name="obstacles_num" default="20" />
+
+    <!-- Scan parameters -->
+    <arg name="angle_min" default="-135.0" /> <!-- degrees -->
+    <arg name="angle_max" default="135.0" /> <!-- degrees -->
+    <arg name="angle_increment" default="0.25" /> <!-- degrees -->
+    <arg name="range_min" default="0.02" /> <!-- meters -->
+    <arg name="range_max" default="30.0" /> <!-- meters -->
+
+    <!-- Scan noise parameters -->
+    <arg name="scan_angle_noise" default="0.001" />
+    <arg name="scan_range_noise" default="0.02" />
+
+    <!-- Threshold to valid measurement ranges 
+         Valid measurement range is included in the minimum to maximum ranges.
+         If valid measurement ratio is less than the threshold, its scan is ignored. -->
+    <arg name="valid_scan_rate_th" default="0.5" />
+
+    <!-- Failure and the maximum expected thresholds to positional and angular errors in meters and degrees -->
+    <arg name="failure_positional_error_th" default="0.2" /> <!-- meters -->
+    <arg name="failure_angular_error_th" default="2.0" /> <!-- degrees -->
+    <arg name="positional_error_max" default="0.5" /> <!-- meters -->
+    <arg name="angular_error_max" default="5.0" /> <!-- degrees -->
+
+
+
+
+
+    <!-- Map server node -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_yaml_file)" >
+        <remap from="/map" to="$(arg map_name)" />
+    </node >
+
+    <!-- Learning node -->
+    <node name="classifier_dataset_generator" pkg="als_ros" type="classifier_dataset_generator" output="screen" >
+        <param name="map_name" value="$(arg map_name)" type="string" />
+        <param name="generate_sample_num" value="$(arg generate_sample_num)" type="int" />
+        <param name="save_dir" value="$(arg save_dir)" type="string" />
+        <param name="obstacles_num" value="$(arg obstacles_num)" type="int" />
+        <param name="angle_min" value="$(arg angle_min)" type="double" />
+        <param name="angle_max" value="$(arg angle_max)" type="double" />
+        <param name="angle_increment" value="$(arg angle_increment)" type="double" />
+        <param name="range_min" value="$(arg range_min)" type="double" />
+        <param name="range_max" value="$(arg range_max)" type="double" />
+        <param name="scan_angle_noise" value="$(arg scan_angle_noise)" type="double" />
+        <param name="scan_range_noise" value="$(arg scan_range_noise)" type="double" />
+        <param name="valid_scan_rate_th" value="$(arg valid_scan_rate_th)" type="double" />
+        <param name="failure_positional_error_th" value="$(arg failure_positional_error_th)" type="double" />
+        <param name="failure_angular_error_th" value="$(arg failure_angular_error_th)" type="double" />
+        <param name="positional_error_max" value="$(arg positional_error_max)" type="double" />
+        <param name="angular_error_max" value="$(arg angular_error_max)" type="double" />
+    </node >
+</launch >
