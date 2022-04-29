@@ -89,12 +89,14 @@ Descriptions for all the parameters are written in the launch files. I am planni
 
 [arXiv preprint](https://) is available. If you use als_ros for your research, please cite the preprint.
 
-@article{Akai2022ReliableMC,
+```
+@article{Akai2022arXiv:ReliableMC,
     title = {Reliable Monte Carlo Localization for Mobile Robots},
     author = {Akai, Naoki},
     journal = {arXiv:1111.22222},
     year = {2022}
 }
+```
 
 
 
