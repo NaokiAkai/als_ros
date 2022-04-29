@@ -54,7 +54,7 @@ There are launch files in the als_ros pakages. These names are set in **mcl.laun
 Then, the localization software can be used with mcl.launch.
 
 ```
-$ roslaunch roslaunch als_ros mcl.launch
+$ roslaunch als_ros mcl.launch
 ```
 
 In default, localization for pose tracking with the robust localization and reliability estimation techniques presented in [2, 3] is executed.
