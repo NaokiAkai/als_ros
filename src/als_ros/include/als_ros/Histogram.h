@@ -1,5 +1,5 @@
 /****************************************************************************
- * ALSROS: Advanced 2D Localization Systems for ROS use
+ * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -25,11 +25,6 @@ private:
     int histogramSize_, valueNum_;
     std::vector<int> histogram_;
     std::vector<double> probability_;
-//    static std::vector<double> probability_;
-// MAEClassifierで6つヒストグラムを宣言すると、このprobability_を宣言するとnanになる
-// ただし、MAEClassifierでヒストグラムの宣言を4つにすると落ちない
-// staticをつけたらこの問題は回避できる。
-// 現状はMAEClassifierで宣言するヒストグラムを4つにしている
 
     inline int val2bin(double val) {
         int bin = (int)((val - minValue_) / binWidth_);
@@ -87,6 +82,24 @@ public:
             return probability_[bin];
         else
             return -1.0;
+    }
+
+    void smoothHistogram(void) {
+        std::vector<double> vals((int)histogram_.size());
+        double sum = 0.0;
+        for (int i = 0; i < (int)histogram_.size(); ++i) {
+            int i0 = i - 1;
+            if (i0 < 0)
+                i0 = 0;
+            int i1 = i + 1;
+            if (i1 >= (int)histogram_.size())
+                i1 = (int)histogram_.size() - 1;
+            double val = (histogram_[i0] + histogram_[i] + histogram_[i1]) / 3.0;
+            vals[i] = val;
+            sum += val;
+        }
+        for (int i = 0; i < (int)histogram_.size(); ++i)
+            histogram_[i] = vals[i] / sum;
     }
 
     void printHistogram(void) {

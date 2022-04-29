@@ -1,5 +1,5 @@
 /****************************************************************************
- * ALSROS: Advanced 2D Localization Systems for ROS use
+ * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public

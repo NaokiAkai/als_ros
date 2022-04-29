@@ -1,5 +1,5 @@
 /****************************************************************************
- * ALSROS: Advanced 2D Localization Systems for ROS use
+ * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -66,6 +66,7 @@ private:
     geometry_msgs::PoseArray glSampledPoses_;
     bool canUpdateGLSampledPoses_, canUseGLSampledPoses_, isGLSampledPosesUpdated_;
     double glSampledPoseTimeTH_, gmmPositionalVariance_, gmmAngularVariance_;
+    double predDistUnifRate_;
 
     // map
     cv::Mat distMap_;
@@ -116,6 +117,7 @@ private:
     int classifierType_;
     double reliability_;
     std::vector<double> reliabilities_, glSampledPosesReliabilities_;
+    std::vector<double> relTransDDM_, relTransODM_;
 
     // mean absolute error (MAE)-based failure detector
     MAEClassifier maeClassifier_;
@@ -123,7 +125,7 @@ private:
     std::vector<double> maes_, glSampledPosesMAEs_;
 
     // global-localization-based pose sampling
-    bool useGLPoseSampler_;
+    bool useGLPoseSampler_, fuseGLPoseSamplerOnlyUnreliable_;
 
     // constant parameters
     const double rad2deg_;
@@ -206,12 +208,16 @@ public:
         publishResidualErrors_(false),
         resampleThresholdESS_(0.5),
         estimateReliability_(true),
+        relTransDDM_({0.0, 0.0}),
+        relTransODM_({0.0, 0.0, 0.0}),
         classifierType_(0),
         maeClassifierDir_("/home/akai/Dropbox/git/als_ros/src/als_ros/classifiers/MAE/"),
         useGLPoseSampler_(false),
+        fuseGLPoseSamplerOnlyUnreliable_(false),
         glSampledPoseTimeTH_(0.5),
         gmmPositionalVariance_(0.1),
         gmmAngularVariance_(0.1),
+        predDistUnifRate_(0.05),
         localizationHz_(10.0),
         gotMap_(false),
         scanMightInvalid_(false),
@@ -278,6 +284,8 @@ public:
 
         // reliability estimation
         nh_.param("estimate_reliability", estimateReliability_, estimateReliability_);
+        nh_.param("rel_trans_ddm", relTransDDM_, relTransDDM_);
+        nh_.param("rel_trans_odm", relTransODM_, relTransODM_);
 
         // failure detector
         nh_.param("classifier_type", classifierType_, classifierType_);
@@ -285,9 +293,11 @@ public:
 
         // global-localization-based pose sampling
         nh_.param("use_gl_pose_sampler", useGLPoseSampler_, useGLPoseSampler_);
+        nh_.param("fuse_gl_pose_sampler_only_unreliable", fuseGLPoseSamplerOnlyUnreliable_, fuseGLPoseSamplerOnlyUnreliable_);
         nh_.param("gl_sampled_pose_time_th", glSampledPoseTimeTH_, glSampledPoseTimeTH_);
         nh_.param("gmm_positional_variance", gmmPositionalVariance_, gmmPositionalVariance_);
         nh_.param("gmm_angular_variance", gmmAngularVariance_, gmmAngularVariance_);
+        nh_.param("pred_dist_unif_rate", predDistUnifRate_, predDistUnifRate_);
 
         // other parameters
         nh_.param("localization_hz", localizationHz_, localizationHz_);
@@ -442,6 +452,12 @@ public:
                 double y = particles_[i].getY() + ddist * sin(t);
                 yaw += dyaw;
                 particles_[i].setPose(x, y, yaw);
+                if (estimateReliability_) {
+                    double decayRate = 1.0 - (relTransDDM_[0] * ddist * ddist + relTransDDM_[1] * dyaw * dyaw);
+                    if (decayRate <= 0.0)
+                        decayRate = 10.0e-6;
+                    reliabilities_[i] *= decayRate;
+                }
             }
         } else {
             // omni directional model
@@ -467,6 +483,12 @@ public:
                 double y = particles_[i].getY() + dx * sin(t) + dy * sin(t + M_PI / 2.0f);;
                 yaw += dyaw;
                 particles_[i].setPose(x, y, yaw);
+                if (estimateReliability_) {
+                    double decayRate = 1.0 - (relTransODM_[0] * dx * dx + relTransODM_[1] * dy * dy + relTransODM_[2] * dyaw * dyaw);
+                    if (decayRate <= 0.0)
+                        decayRate = 10.0e-6;
+                    reliabilities_[i] *= decayRate;
+                }
             }
         }
     }
@@ -600,12 +622,10 @@ public:
             return;
         if (scanMightInvalid_)
             return;
-/*
-        if (estimateReliability_) {
-            if (reliability_ > 0.9)
+        if (estimateReliability_ && fuseGLPoseSamplerOnlyUnreliable_) {
+            if (reliability_ >= 0.9)
                 return;
         }
- */
 
         glParticlesNum_ = (int)glSampledPoses_.poses.size();
         double dt = fabs(mclPoseStamp_.toSec() - glSampledPosesStamp_.toSec());
@@ -674,6 +694,7 @@ public:
         double angleResolution = 1.0 * M_PI / 180.0;
         double sum = totalLikelihood_;
         double max = maxLikelihood_;
+        double gmmRate = 1.0 - predDistUnifRate_;
         int maxIdx = -1;
         for (int i = 0; i < glParticlesNum_; ++i) {
             // measurement likelihood
@@ -705,7 +726,7 @@ public:
                 gmmVal += normConst * exp(-((dx * dx) / (2.0 * gmmPositionalVariance_) + (dy * dy) / (2.0 * gmmPositionalVariance_) + (dyaw * dyaw) / (2.0 * gmmAngularVariance_)));
             }
             double pGMM = (double)glParticlesNum_ * gmmVal * mapResolution_ * mapResolution_ * angleResolution / (double)particlesNum_;
-            double predLikelihood = 0.95 * pGMM + 0.05 * 10e-9;
+            double predLikelihood = gmmRate * pGMM + predDistUnifRate_ * 10e-9;
             w *= predLikelihood;
             if (w > 1.0)
                 w = 1.0;
@@ -757,8 +778,6 @@ public:
             double wo = 1.0 / (double)particlesNum_;
             for (int i = 0; i < particlesNum_; ++i) {
                 double w = particles_[i].getW() / totalLikelihood_;
-//                if (std::isnan(w))
-//                    w = wo;
                 particles_[i].setW(w);
                 sum += w * w;
             }
@@ -766,15 +785,11 @@ public:
             double wo = 1.0 / (double)(particlesNum_ + glParticlesNum_);
             for (int i = 0; i < particlesNum_; ++i) {
                 double w = particles_[i].getW() / totalLikelihood_;
-//                if (std::isnan(w))
-//                    w = wo;
                 particles_[i].setW(w);
                 sum += w * w;
             }
             for (int i = 0; i < glParticlesNum_; ++i) {
                 double w = glParticles_[i].getW() / totalLikelihood_;
-//                if (std::isnan(w))
-//                    w = wo;
                 glParticles_[i].setW(w);
                 sum += w * w;
             }
@@ -981,7 +996,6 @@ public:
             std::cout << "amcl random particles rate = " << amclRandomParticlesRate_ << std::endl;
         if (estimateReliability_ && classifierType_ == 0)
             std::cout << "reliability = " << reliability_ << " (mae = " << maeClassifier_.getMAE(getResidualErrors<double>(particles_[maxLikelihoodParticleIdx_].getPose())) << " [m], th = " << maeClassifier_.getFailureThreshold() << " [m])" << std::endl;
-//            std::cout << "reliability = " << reliability_ << " (mae = " << maeClassifier_.getMAE(getResidualErrors<double>(mclPose_)) << " [m], th = " << maeClassifier_.getFailureThreshold() << " [m])" << std::endl;
         std::cout << std::endl;
     }
 

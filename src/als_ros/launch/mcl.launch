@@ -120,6 +120,11 @@
          The sampled poses are integrated to the mcl estimate via importance sampling. -->
     <arg name="use_gl_pose_sampler" default="false" />
 
+    <!-- fuse_gl_pose_sampler_only_unreliable is true,
+         the sampled pose is fused if reliability is less than 90 %.
+         This flag is ignored if estimate_reliability is false. -->
+    <arg name="fuse_gl_pose_sampler_only_unreliable" default="false" />
+
     <!-- Time threshold to fuse the global-localization (GL)-based pose sampling result.
          If time difference between the laser scan used for MCL and GL pose sampling result exceeds the threshold,
          the pose sampling result is not used. -->
@@ -131,6 +136,11 @@
          Following variances are parameters for GMM. -->
     <arg name="gmm_positional_variance" default="0.01" />
     <arg name="gmm_angular_variance" default="0.01" />
+
+    <!-- Rate of uniform distribution in approximation of the predictive distribution
+         If pred_dist_unif_rate is 0.0,
+         large localization error cannot be compensated even if global localization is used. -->
+    <arg name="pred_dist_unif_rate" default="0.05" />
 
     <!-- If use_mrf_failure_detector is true, Markov-random-fields-based localization failure detector is used.
          Note that Note that the failure detector just publishes failure probability. -->
@@ -150,10 +160,16 @@
          These parameters are used when use_augmented_mcl or add_random_particles_in_resampling is true. -->
     <rosparam param="/$(arg node_name)/random_particles_noise" > [0.05, 0.05, 0.1] </rosparam >
 
-    <!-- Motion noises -->
+    <!-- Motion noises
+         ddm and odm stand for differential drive model and omni directional model, respectively. -->
     <rosparam param="/$(arg node_name)/odom_noise_ddm" > [1.0, 0.5, 0.5, 1.5] </rosparam >
-    <!-- <rosparam param="/$(arg node_name)/odom_noise_ddm" > [0.3, 0.1, 0.1, 0.3] </rosparam > -->
     <rosparam param="/$(arg node_name)/odom_noise_odm" > [1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 1.0] </rosparam >
+
+    <!-- Parameters used in the reliability transition model
+         If the values are large, reliability quickly decrease according to robot move.
+         If the values are zero, reliability does not decrease even if the robot moves. -->
+    <rosparam param="/$(arg node_name)/rel_trans_ddm" > [0.0, 0.0] </rosparam >
+    <rosparam param="/$(arg node_name)/rel_trans_odm" > [0.0, 0.0, 0.0] </rosparam >
 
     <!-- Resampling thresholds to delta x, y, distance, yaw, and time, respectively. 
          If all parameters are set to minus, these thresholds are ignored. -->
@@ -162,7 +178,7 @@
 
 
 
-    <!-- include other programs -->
+    <!-- include other launch files -->
 <!--
     <include file="$(find als_ros)/launch/robot_tf.launch" >
         <arg name="laser_frame" value="$(arg laser_frame)" />
@@ -170,11 +186,15 @@
     </include >
  -->
 
+
+
 <!--
     <include file="$(find als_ros)/launch/map_server.launch" >
         <arg name="map_name" value="$(arg map_name)" />
     </include >
  -->
+
+
 
     <include file="$(find als_ros)/launch/gl_pose_sampler.launch" if="$(arg use_gl_pose_sampler)" >
         <arg name="map_name" value="$(arg map_name)" />
@@ -192,9 +212,10 @@
         <arg name="laser_frame" value="$(arg laser_frame)" />
     </include >
 
+
+
     <include file="$(find als_ros)/launch/mrf_failure_detector.launch" if="$(arg use_mrf_failure_detector)" >
         <arg name="residual_errors_name" value="$(arg residual_errors_name)" />
-
         <arg name="marker_frame" value="$(arg base_link_frame)" />
     </include >
 
@@ -260,6 +281,7 @@
         <param name="mae_histogram_bin_width" value="$(arg mae_histogram_bin_width)" type="double" />
 
         <param name="use_gl_pose_sampler" value="$(arg use_gl_pose_sampler)" type="bool" />
+        <param name="fuse_gl_pose_sampler_only_unreliable" value="$(arg fuse_gl_pose_sampler_only_unreliable)" type="bool" />
         <param name="gl_sampled_pose_time_th" value="$(arg gl_sampled_pose_time_th)" type="double" />
         <param name="gmm_positional_variance" value="$(arg gmm_positional_variance)" type="double" />
         <param name="gmm_angular_variance" value="$(arg gmm_angular_variance)" type="double" />

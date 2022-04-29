@@ -1,15 +1,16 @@
 /****************************************************************************
- * ALSROS: Advanced 2D Localization Systems for ROS use
+ * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/.
  *
+ * To implement this program, a following paper was referred.
+ * https://arxiv.org/pdf/1908.01863.pdf
+ * 
  * @author Naoki Akai
  ****************************************************************************/
-
-// https://arxiv.org/pdf/1908.01863.pdf
 
 #ifndef __GL_POSE_SAMPLER_H__
 #define __GL_POSE_SAMPLER_H__

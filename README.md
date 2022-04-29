@@ -1,11 +1,13 @@
 # als_ros
 
-An Advanced Localization System [1] for the use in Robot Operating System (als_ros) is a localization package with 2D LiDAR. It contains following functions;
+An Advanced Localization System [1] for Robot Operating System use (als_ros) is a localization package with 2D LiDAR and contains following functions;
 
 - Robust localization based on simultaneous sensor measurement class estimation [2],
-- Reliability estimation based on a simple localization correctness classifier [3],
+- Reliability estimation based on Bayesian filtering with a simple localization correctness classifier [3],
 - Misalignment recognition using Markov random fields with fully connected latent variables [4],
 - Quick re-localization based on fusion of pose tracking and global localization using the importance sampling [5].
+
+These details can be seen at [Reliable Monte Carlo Localization for Mobile Robots](http://), that is arXiv preprint.
 
 
 
@@ -13,7 +15,9 @@ An Advanced Localization System [1] for the use in Robot Operating System (als_r
 
 ## How to install
 
-You need to install ROS environment first. Then, type following commands.
+ROS environment is needed to be installed first. I confirmed that als_ros works on Ubuntu 18.04 with melodic and Ubuntu 20,.04 with noetic.
+
+Then, type following commands.
 
 ```
 $ git clone https://github.com/NaokiAkai/als_ros.git
@@ -22,21 +26,32 @@ $ catkin_make
 $ source devel/setup.bash
 ```
 
-If you do not want to make a new workspace for als_ros, please copy the als_ros package to your workspace.
+If you do not want to make a new workspace for als_ros, please copy the als_ros package to your workspace. The cloned directory has a ROS workspace.
 
 
 
 ## How to use
 
-You need to publish sensor_msgs::LaserScan, nav_msgs::Odometry, and nav_msgs::OccupancyGrid. Default topic names of these messages are "/scan", "/odom", and "/map". 
+Following messages (topics) are needed to be published; 
 
-Also, you need to execute static_transform_publisher for between the base link to the laser sensor. Default frame names of these frames are "base_link" and "laser".
+- sensor_msgs::LaserScan (/scan)
+- nav_msgs::Odometry (/odom)
+- nav_msgs::OccupancyGrid (/map)
 
-Please refer the ROS documents for setting them.
+Names inside of the brackets are default topic names.
+
+Also, static transformation between following two frames is needed to be set.
+
+- origin of a robot (base_link)
+- 2D LiDAR (laser)
+
+Names inside of the brackets are default frame names.
+
+There are launch files in the als_ros pakages. These names are set in **mcl.launch**.
 
 
 
-Then, you can use the localization software as
+Then, the localization software can be used with mcl.launch.
 
 ```
 $ roslaunch roslaunch als_ros mcl.launch
@@ -54,29 +69,38 @@ $ roslaunch als_ros mcl.launch use_mrf_failure_detector:=true
 
 
 
-If you want to use quick fusion of pose tracking and global localization, please set use_gl_pose_sampler flag to true.
+If you want to use fusion of pose tracking and global localization, please set use_gl_pose_sampler flag to true.
 
 ```
 $ roslaunch als_ros mcl.launch use_gl_pose_sampler:=true
 ```
 
+In als_ros, global localization is implemented using the free-space feature presented in [6].
+
 
 
 ## Parameter descriptions
 
-There are launch files in the als_ros package. Descriptions for all the parameters are written in the files.
+Descriptions for all the parameters are written in the launch files. I am planning to make a more precise document.
 
 
 
+# Citation
 
+[arXiv preprint](https://) is available. If you use als_ros for your research, please cite the preprint.
 
-
+@article{Akai2022ReliableMC,
+    title = {Reliable Monte Carlo Localization for Mobile Robots},
+    author = {Akai, Naoki},
+    journal = {arXiv:1111.22222},
+    year = {2022}
+}
 
 
 
 # References
 
-[1] Naoki Akai．"An advanced localization system: Performance improvement of localization for mobile robots and its implementation," CORONA PUBLISHING CO., LTD (to be appeared, in Japanese).
+[1] Naoki Akai．"An advanced localization system using LiDAR: Performance improvement of localization for mobile robots and its implementation," CORONA PUBLISHING CO., LTD (to be appeared, in Japanese).
 
 [2] Naoki Akai, Luis Yoichi Morales, and Hiroshi Murase. "Mobile robot localization considering class of sensor observations," In *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 3159-3166, 2018.
 
@@ -85,4 +109,6 @@ There are launch files in the als_ros package. Descriptions for all the paramete
 [4] Naoki Akai, Luis Yoichi Morales, Takatsugu Hirayama, and Hiroshi Murase. "Misalignment recognition using Markov random fields with fully connected latent variables for detecting localization failures," *IEEE Robotics and Automation Letters*, vol. 4, no. 4, pp. 3955-3962, 2019.
 
 [5] Naoki Akai, Takatsugu Hirayama, and Hiroshi Murase. "Hybrid localization using model- and learning-based methods: Fusion of Monte Carlo and E2E localizations via importance sampling," In *Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)*, pp. 6469-6475, 2020.
+
+[6] Alexander Millane, Helen, Oleynikova, Juan Nieto, Roland Siegwart, and César Cadena. "Free-space features: Global localization in 2D laser SLAM using distance function maps," In *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 1271-1277, 2019.
 

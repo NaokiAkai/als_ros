@@ -68,19 +68,17 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_floor:
-          Value: true
         base_link:
           Value: true
         laser:
           Value: false
-        left_wheel_link:
-          Value: true
         map:
           Value: false
         odom:
           Value: true
-        right_wheel_link:
+        raw_laser1:
+          Value: true
+        rlaser:
           Value: true
       Marker Scale: 10
       Name: TF
@@ -89,9 +87,14 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          base_link:
-            laser:
-              {}
+          odom:
+            base_link:
+              laser:
+                {}
+              raw_laser1:
+                {}
+              rlaser:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -385,7 +388,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 11.099444389343262
+      Scale: 21.896066665649414
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
       X: 0
@@ -407,5 +410,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1267
-  X: 333
-  Y: 181
+  X: 313
+  Y: 240

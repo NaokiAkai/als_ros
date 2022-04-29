@@ -1,5 +1,5 @@
 /****************************************************************************
- * ALSROS: Advanced 2D Localization Systems for ROS use
+ * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -53,16 +53,6 @@ private:
         return std::sqrt(getVar(x));
     }
 
-    void getStatisticalParamsOfMAE(std::vector<std::vector<double>> residualErrors, double *mean, double *std) {
-        std::vector<double> maes;
-        for (size_t i = 0; i < residualErrors.size(); i++) {
-            double mae = getMAE(residualErrors[i]);
-            maes.push_back(mae);
-        }
-        *mean = getMean(maes);
-        *std = getStd(maes);
-    }
-
     std::vector<double> readMAEs(std::string filePath) {
         FILE *fp = fopen(filePath.c_str(), "r");
         if (fp == NULL) {
@@ -104,9 +94,6 @@ public:
     }
 
     void learnThreshold(std::vector<std::vector<double>> trainSuccessResidualErrors, std::vector<std::vector<double>> trainFailureResidualErrors) {
-//        getStatisticalParamsOfMAE(trainSuccessResidualErrors, &successMAEMean_, &successMAEStd_);
-//        getStatisticalParamsOfMAE(trainFailureResidualErrors, &failureMAEMean_, &failureMAEStd_);
-
         std::vector<double> successMAEs((int)trainSuccessResidualErrors.size());
         std::vector<double> failureMAEs((int)trainFailureResidualErrors.size());
         for (int i = 0; i < (int)trainSuccessResidualErrors.size(); ++i)
@@ -241,6 +228,13 @@ public:
         falsePositiveMAEHistogram_ = Histogram(readMAEs(falsePositiveMAEsFilePath), maeHistogramBinWidth_);
         falseNegativeMAEHistogram_ = Histogram(readMAEs(falseNegativeMAEsFilePath), maeHistogramBinWidth_);
 
+        positiveMAEHistogram_.smoothHistogram();
+        negativeMAEHistogram_.smoothHistogram();
+        truePositiveMAEHistogram_.smoothHistogram();
+        trueNegativeMAEHistogram_.smoothHistogram();
+        falsePositiveMAEHistogram_.smoothHistogram();
+        falseNegativeMAEHistogram_.smoothHistogram();
+
         int truePositiveNum = lconf["truePositiveNum"].as<int>();
         int falseNegativeNum = lconf["falseNegativeNum"].as<int>();
         int trueNegativeNum = lconf["trueNegativeNum"].as<int>();
@@ -253,19 +247,12 @@ public:
 
     double calculateDecisionModel(double mae, double *reliability) {
         double pSuccess, pFailure;
-        if (mae <= failureThreshold_) {
-            pSuccess = dTruePositive_ * truePositiveMAEHistogram_.getProbability(mae);
-            pFailure = dFalsePositive_ * falsePositiveMAEHistogram_.getProbability(mae);
-        } else {
-            pSuccess = dFalseNegative_ * falseNegativeMAEHistogram_.getProbability(mae);
-            pFailure = dTrueNegative_ * trueNegativeMAEHistogram_.getProbability(mae);
-        }
         pSuccess = dTruePositive_ * positiveMAEHistogram_.getProbability(mae) + dFalsePositive_ * positiveMAEHistogram_.getProbability(mae);
         pFailure = dTrueNegative_ * negativeMAEHistogram_.getProbability(mae) + dFalsePositive_ * negativeMAEHistogram_.getProbability(mae);
-        if (pSuccess < 10.0e-6)
-            pSuccess = 10.0e-6;
-        if (pFailure < 10.0e-6)
-            pFailure = 10.0e-6;
+        if (pSuccess < 10.0e-9)
+            pSuccess = 10.0e-9;
+        if (pFailure < 10.0e-9)
+            pFailure = 10.0e-9;
         double rel = pSuccess * *reliability;
         double relInv = pFailure * (1.0 - *reliability);
         double p = rel + relInv;
