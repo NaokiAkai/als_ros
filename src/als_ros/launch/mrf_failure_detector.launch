@@ -18,7 +18,8 @@
 
     <!-- If publish_classified_scans is true, the above scan messages will be published. -->
 
-    <!-- Parameters related to the likelihood distributions -->
+    <!-- Parameters related to the likelihood distributions
+         These values must be positive. -->
     <arg name="normal_distribution_mean" default="0.0" />
     <arg name="normal_distribution_var" default="0.01" />
     <arg name="exponential_distribution_lambda" default="2.0" />
@@ -26,16 +27,19 @@
     <arg name="residual_error_resolution" default="0.05" />
 
     <!-- Parameters related to the failure probability calculation -->
+    <!-- These values must be positive. -->
     <arg name="min_valid_residual_errors_num" default="10" />
     <arg name="max_lpb_computation_num" default="1000" />
     <arg name="sampling_num" default="1000" />
+    <!-- These values must be included from 0 to 1. -->
     <arg name="misalignment_ratio_threshold" default="0.1" />
     <arg name="unknown_ratio_threshold" default="0.7" />
 
     <!-- Processing Hz for the failure detection -->
     <arg name="failure_detection_hz" default="5.0" />
 
-    <!-- Parameters related to the failure probability calculation -->
+    <!-- Parameters related to the failure probability calculation
+         This is a row major matrix and the sum of each row must be 1. -->
     <rosparam param="/$(arg node_name)/transition_probability_matrix" > [0.8, 0.0, 0.2, 0.0, 0.8, 0.2, 0.333333, 0.333333, 0.333333] </rosparam >
 
 

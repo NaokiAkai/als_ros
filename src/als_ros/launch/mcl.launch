@@ -37,22 +37,24 @@
     <arg name="use_odom_tf" default="true" />
 
 
+
     <!-- MCL parameters -->
 
     <!-- 0: likelihood field model, 1, beam model, 2: class conditional measurement model
-         The class conditional measurement model is highly recommended for the position tracking. -->
+         The class conditional measurement model is highly recommended for pose tracking. -->
     <arg name="measurement_model_type" default="2" />
 
     <!-- Numbers of particles
          In this MCL package, the numbers of the particles are constant. -->
-    <arg name="particle_num" default="300" />
+    <arg name="particle_num" default="200" />
 
     <!-- If use_augmented_mcl is true, augmented MCL is used.
          Augmented MCL adds random particles when doing resampling if MCL might fail localization.
          alpha_slow and alpha_fast are parameters for augmented MCL (0 < alpha_slow << alpha_fast < 1).
          If add_random_particles_in_resampling is true, random particles are also added in resampling.
          (random_particles_rate * particle_num) particles are added
-         if add_random_particles_in_resampling is true. -->
+         if add_random_particles_in_resampling is true.
+         random_particles_rate must be positive. -->
     <arg name="use_augmented_mcl" default="false" />
     <arg name="alpha_slow" default="0.001" />
     <arg name="alpha_fast" default="0.99" />
@@ -67,7 +69,8 @@
          scans that might measure unknown obstacles are rejected before likelihood calculation.
          The scan rejection will perform when the likelihood field or beam models is used.
          If publish_unknown_scan is true, the rejected scan is published.
-         unknown_scan_prob_threshold included from 0 to 1 is a threshold to reject the unknown scan. -->
+         unknown_scan_prob_threshold included from 0 to 1 is a threshold to reject the unknown scan.
+          unknown_scan_prob_threshold must be included from 0 to 1. -->
     <arg name="reject_unknown_scan" default="false" />
     <arg name="publish_unknown_scan" default="true" />
     <arg name="unknown_scan_prob_threshold" default="0.9" />
@@ -85,7 +88,7 @@
 
     <!-- The measurement models' parameters
          The sum of z_hit, z_max, and z_rand must be 1
-         when the likelihood field and class coditional measurment models are used. 
+         when the likelihood field or class coditional measurment models are used. 
          The sum of z_hit, z_short, z_max, and z_rand must be 1 when the beam model is used. -->
     <arg name="z_hit" default="0.9" />
     <arg name="z_short" default="0.2" />
@@ -95,11 +98,13 @@
     <arg name="lambda_short" default="1.0" />
     <arg name="lambda_unknown" default="0.01" />
 
-    <!-- A parameter for the class conditional measurement model. 0.5 is recommended. -->
+    <!-- A parameter for the class conditional measurement model. 0.5 is recommended.
+         This must be included from 0 to 1. -->
     <arg name="known_class_prior" default="0.5" />
 
     <!-- If rate of the effective sample size is less than resample_threshold_ess,
-         resampling will be performed. -->
+         resampling will be performed.
+         This must be included from 0 to 1. -->
     <arg name="resample_threshold_ess" default="0.5" />
 
     <!-- If estimate_reliability is true, the reliability estimation is performed. -->
@@ -110,8 +115,9 @@
          Note that only mean-absolute-error-based classifier is supported in the current version. -->
     <arg name="classifier_type" default="0" />
 
-    <!-- Mean absolute error (MAE)-based localization failure detector. 
-         If classifier_type = 0, these parameters must be appropriately set. -->
+    <!-- Mean absolute error (MAE)-based localization failure detector.
+         If classifier_type = 0, these parameters must be appropriately set.
+         mae_max_residual_error and mae_histogram_bin_width must be larger than 0. -->
     <arg name="mae_classifier_dir" default="$(find als_ros)/classifiers/MAE/" />
     <arg name="mae_max_residual_error" default="0.5" />
     <arg name="mae_histogram_bin_width" default="0.05" />
@@ -127,19 +133,22 @@
 
     <!-- Time threshold to fuse the global-localization (GL)-based pose sampling result.
          If time difference between the laser scan used for MCL and GL pose sampling result exceeds the threshold,
-         the pose sampling result is not used. -->
+         the pose sampling result is not used.
+         gl_sampled_pose_time_th must be larger than 0. -->
     <arg name="gl_sampled_pose_time_th" default="1.0" />
 
     <!-- Assume that the predictive distribution can be approximately represented by the Gaussian mixture model (GMM)
          based on the particles updated by the motion model.
          GMM is used to calculate likelihood of the poses drawn by the GL pose sampler.
-         Following variances are parameters for GMM. -->
+         Following variances are parameters for GMM.
+         gmm_positional_variance and gmm_angular_variance must be larger than 0. -->
     <arg name="gmm_positional_variance" default="0.01" />
     <arg name="gmm_angular_variance" default="0.01" />
 
     <!-- Rate of uniform distribution in approximation of the predictive distribution
          If pred_dist_unif_rate is 0.0,
-         large localization error cannot be compensated even if global localization is used. -->
+         large localization error cannot be compensated even if global localization is used.
+         This must be included from 0 to 1. -->
     <arg name="pred_dist_unif_rate" default="0.05" />
 
     <!-- If use_mrf_failure_detector is true, Markov-random-fields-based localization failure detector is used.
@@ -151,7 +160,6 @@
 
     <!-- Initial pose (x [m], y [m], yaw [deg]) -->
     <rosparam param="/$(arg node_name)/initial_pose" > [0.0, 0.0, 0.0] </rosparam >
-    <!-- <rosparam param="/$(arg node_name)/initial_pose" > [5.0, -19.0, 180.0] </rosparam > -->
 
     <!-- Parameters used for determining initial particles distribution (x, y, yaw) -->
     <rosparam param="/$(arg node_name)/initial_noise" > [0.02, 0.02, 0.01] </rosparam >

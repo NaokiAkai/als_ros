@@ -1,6 +1,10 @@
 <!-- mae_classifier_learning.launch -->
 <launch >
+    <!-- A directory to store parameters regarding MAE-based classifier -->
     <arg name="classifier_dir" default="$(find als_ros)/classifiers/MAE/" />
+
+    <!-- Parameters for the MAE-based classifier.
+         These values must be positive. -->
     <arg name="max_residual_error" default="1.0" />
     <arg name="histogram_bin_width" default="0.025" />
 
@@ -21,7 +25,9 @@
     <rosparam param="/mae_classifier_learning/test_dirs" >
         ["/tmp/classifier_dataset_test/"]
     </rosparam >
-    
+
+
+
     <node name="mae_classifier_learning" pkg="als_ros" type="mae_classifier_learning" output="screen" >
         <param name="classifier_dir" value="$(arg classifier_dir)" type="string" />
         <param name="max_residual_error" value="$(arg max_residual_error)" type="double" />

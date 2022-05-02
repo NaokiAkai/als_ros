@@ -1,5 +1,5 @@
 /****************************************************************************
- * als_ros: Advanced Localization Systems for ROS use with 2D LiDAR
+ * als_ros: An Advanced Localization System for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,7 +8,7 @@
  *
  * To implement this program, a following paper was referred.
  * https://arxiv.org/pdf/1908.01863.pdf
- * 
+ *
  * @author Naoki Akai
  ****************************************************************************/
 

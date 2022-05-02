@@ -1,7 +1,7 @@
 <!-- scan2pc.launch -->
 <launch>
     <arg name="node_name" default="scan2pc" />
-    <arg name="scan_name" default="/hk/base_front_scan" />
+    <arg name="scan_name" default="/scan" />
     <arg name="scan_points_name" default="/scan_points" />
 
     <node name="$(arg node_name)" pkg="als_ros" type="scan2pc" output="log" >

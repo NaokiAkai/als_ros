@@ -1,5 +1,6 @@
 <!-- gl_pose_sampler.launch -->
 <launch >
+    <!-- Node name -->
     <arg name="node_name" default="gl_pose_sampler" />
 
     <!-- Input messages -->
@@ -30,18 +31,21 @@
     <arg name="key_scan_interval_dist" default="0.2" />
     <arg name="key_scan_interval_yaw" default="5.0" />
 
-    <!-- Threshold to detect keypoints 
+    <!-- Threshold to detect keypoints
          Keypoints are easily detected if this value is close to zero, but it must be larger than 0. -->
     <arg name="gradient_square_th" default="0.01" />
 
-    <!-- The minimum distance between keypoints and mapped obstacles in meters -->
+    <!-- The minimum distance between keypoints and mapped obstacles in meters
+         This must be positive. -->
     <arg name="keypoints_min_dist_from_map" default="0.5" />
 
-    <!-- Window size to calculate feature of keypoints in meters -->
+    <!-- Window size to calculate feature of keypoints in meters
+         This must be positive. -->
     <arg name="sdf_feature_window_size" default="1.0" />
 
     <!-- Threshold to difference between average values of distance fields within the window
-         This is used for corresponding keypoint search and correspondences are easily found if this value is large. -->
+         This is used for corresponding keypoint search and correspondences are easily found if this value is large.
+         This must be positive. -->
     <arg name="average_sdf_delta_th" default="0.01" />
 
     <!-- Add random and/or opposite direction samples when global localization candidate poses are found -->
@@ -51,7 +55,8 @@
     <!-- Number of random samples -->
     <arg name="random_samples_num" default="20" />
 
-    <!-- Positional and angular noises for the random sampling -->
+    <!-- Positional and angular noises for the random sampling
+         These values must be positive. -->
     <arg name="positional_random_noise" default="0.5" />
     <arg name="angular_random_noise" default="0.3" />
 

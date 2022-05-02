@@ -1,13 +1,13 @@
 # als_ros
 
-An Advanced Localization System [1] for Robot Operating System use (als_ros) is a localization package with 2D LiDAR and contains following functions;
+An Advanced Localization System [1] for Robot Operating System use (als_ros) is a localization package with 2D LiDAR. als_ros contains following functions;
 
-- Robust localization based on simultaneous sensor measurement class estimation [2],
-- Reliability estimation based on Bayesian filtering with a simple localization correctness classifier [3],
+- Robust localization based on sensor measurement class estimation [2],
+- Reliability estimation based on Bayesian filtering with a simple classifier of localization correctness [3],
 - Misalignment recognition using Markov random fields with fully connected latent variables [4],
-- Quick re-localization based on fusion of pose tracking and global localization using the importance sampling [5].
+- Quick re-localization based on fusion of pose tracking and global localization via the importance sampling [5].
 
-These details can be seen at [Reliable Monte Carlo Localization for Mobile Robots](http://), that is arXiv preprint.
+These details can be seen at [Reliable Monte Carlo Localization for Mobile Robots (arXiv preprint)](http://).
 
 
 
@@ -15,9 +15,9 @@ These details can be seen at [Reliable Monte Carlo Localization for Mobile Robot
 
 ## How to install
 
-ROS environment is needed to be installed first. I confirmed that als_ros works on Ubuntu 18.04 with melodic and Ubuntu 20,.04 with noetic.
+ROS environment is needed to be installed first. I confirmed that als_ros works on **Ubuntu 18.04** with melodic and **Ubuntu 20.04** with noetic.
 
-Then, type following commands.
+als_ros can be installed with following commands.
 
 ```
 $ git clone https://github.com/NaokiAkai/als_ros.git
@@ -47,25 +47,17 @@ Also, static transformation between following two frames is needed to be set.
 
 Names inside of the brackets are default frame names.
 
-There are launch files in the als_ros pakages. These names are set in **mcl.launch**.
+There are launch files in the als_ros package. These names can be changed in **mcl.launch**.
 
 
 
-Then, the localization software can be used with mcl.launch.
+After setting the topics and transformation, the localization software can be used with mcl.launch.
 
 ```
 $ roslaunch als_ros mcl.launch
 ```
 
 In default, localization for pose tracking with the robust localization and reliability estimation techniques presented in [2, 3] is executed.
-
-
-
-If you want to use estimation of localization failure probability with misalignment recognition, please set use_mrf_failure_detector flag to true.
-
-```
-$ roslaunch als_ros mcl.launch use_mrf_failure_detector:=true
-```
 
 
 
@@ -76,6 +68,14 @@ $ roslaunch als_ros mcl.launch use_gl_pose_sampler:=true
 ```
 
 In als_ros, global localization is implemented using the free-space feature presented in [6].
+
+
+
+If you want to use estimation of localization failure probability with misalignment recognition, please set use_mrf_failure_detector flag to true.
+
+```
+$ roslaunch als_ros mcl.launch use_mrf_failure_detector:=true
+```
 
 
 

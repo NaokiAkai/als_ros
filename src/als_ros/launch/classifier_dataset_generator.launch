@@ -1,7 +1,7 @@
 <!-- classifier_dataset_generator.launch -->
 <launch >
     <!-- Set your map yaml file
-         Map server published this map with the given name. -->
+         Map server will publish this map with the given name. -->
     <arg name="map_yaml_file" default="/home/akai/Dropbox/git/AutoNavi/ros/maps/nic_garage/ogm.yaml" />
     <arg name="map_name" default="/map" />
 
@@ -9,6 +9,7 @@
     <arg name="generate_sample_num" default="2000" />
 
     <!-- Save directory for the generated data -->
+    <!-- <arg name="save_dir" default="/tmp/classifier_dataset_train/" /> -->
     <arg name="save_dir" default="/tmp/classifier_dataset_test/" />
 
     <!-- Number of moving obstacles
@@ -31,7 +32,8 @@
          If valid measurement ratio is less than the threshold, its scan is ignored. -->
     <arg name="valid_scan_rate_th" default="0.5" />
 
-    <!-- Failure and the maximum expected thresholds to positional and angular errors in meters and degrees -->
+    <!-- Failure and the maximum expected thresholds to positional and angular errors
+         in meters and degrees -->
     <arg name="failure_positional_error_th" default="0.2" /> <!-- meters -->
     <arg name="failure_angular_error_th" default="2.0" /> <!-- degrees -->
     <arg name="positional_error_max" default="0.5" /> <!-- meters -->
@@ -40,6 +42,7 @@
 
 
 
+    <!-- Nodes -->
 
     <!-- Map server node -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_yaml_file)" >
