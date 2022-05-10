@@ -27,7 +27,7 @@
     </rosparam >
 
 
-
+    <!-- Node -->
     <node name="mae_classifier_learning" pkg="als_ros" type="mae_classifier_learning" output="screen" >
         <param name="classifier_dir" value="$(arg classifier_dir)" type="string" />
         <param name="max_residual_error" value="$(arg max_residual_error)" type="double" />

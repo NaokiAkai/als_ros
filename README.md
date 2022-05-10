@@ -87,7 +87,11 @@ Descriptions for all the parameters are written in the launch files. I am planni
 
 # Citation
 
-[arXiv preprint](https://) is available. If you use als_ros for your research, please cite the preprint.
+[arXiv preprint](https://) is available. If you used als_ros in your research, please cite the preprint.
+
+```
+Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:1111.22222, 2022.
+```
 
 ```
 @article{Akai2022arXiv:ReliableMC,
@@ -113,4 +117,10 @@ Descriptions for all the parameters are written in the launch files. I am planni
 [5] Naoki Akai, Takatsugu Hirayama, and Hiroshi Murase. "Hybrid localization using model- and learning-based methods: Fusion of Monte Carlo and E2E localizations via importance sampling," In *Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)*, pp. 6469-6475, 2020.
 
 [6] Alexander Millane, Helen, Oleynikova, Juan Nieto, Roland Siegwart, and César Cadena. "Free-space features: Global localization in 2D laser SLAM using distance function maps," In *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 1271-1277, 2019.
+
+
+
+# License
+
+Mozilla Public License Version 2.0
 

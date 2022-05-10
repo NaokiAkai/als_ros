@@ -50,14 +50,14 @@ private:
     bool broadcastTF_, useOdomTF_;
 
     // poses
-    std::vector<double> initialPose_;
+    double initialPoseX_, initialPoseY_, initialPoseYaw_;
     Pose mclPose_, baseLink2Laser_, odomPose_;
     ros::Time mclPoseStamp_, odomPoseStamp_, glSampledPosesStamp_;
 
     // particles
     int particlesNum_;
     std::vector<Particle> particles_;
-    std::vector<double> initialNoise_;
+    double initialNoiseX_, initialNoiseY_, initialNoiseYaw_;
     bool useAugmentedMCL_, addRandomParticlesInResampling_;
     double randomParticlesRate_;
     std::vector<double> randomParticlesNoise_;
@@ -172,9 +172,13 @@ public:
         odomFrame_("odom"),
         broadcastTF_(true),
         useOdomTF_(true),
-        initialPose_({0.0, 0.0, 0.0}),
+        initialPoseX_(0.0),
+        initialPoseY_(0.0),
+        initialPoseYaw_(0.0),
+        initialNoiseX_(0.02),
+        initialNoiseY_(0.02),
+        initialNoiseYaw_(0.02),
         particlesNum_(100),
-        initialNoise_({0.2, 0.2, 0.02}),
         useAugmentedMCL_(false),
         addRandomParticlesInResampling_(true),
         randomParticlesRate_(0.1),
@@ -248,9 +252,13 @@ public:
         nh_.param("use_odom_tf", useOdomTF_, useOdomTF_);
 
         // particle filter parameters
-        nh_.param("initial_pose", initialPose_, initialPose_);
+        nh_.param("initial_pose_x", initialPoseX_, initialPoseX_);
+        nh_.param("initial_pose_y", initialPoseY_, initialPoseY_);
+        nh_.param("initial_pose_yaw", initialPoseYaw_, initialPoseYaw_);
+        nh_.param("initial_noise_x", initialNoiseX_, initialNoiseX_);
+        nh_.param("initial_noise_y", initialNoiseY_, initialNoiseY_);
+        nh_.param("initial_noise_yaw", initialNoiseYaw_, initialNoiseYaw_);
         nh_.param("particle_num", particlesNum_, particlesNum_);
-        nh_.param("initial_noise", initialNoise_, initialNoise_);
         nh_.param("use_augmented_mcl", useAugmentedMCL_, useAugmentedMCL_);
         nh_.param("add_random_particles_in_resampling", addRandomParticlesInResampling_, addRandomParticlesInResampling_);
         nh_.param("random_particles_rate", randomParticlesRate_, randomParticlesRate_);
@@ -322,8 +330,11 @@ public:
             reliabilityMarkerPub_ = nh_.advertise<visualization_msgs::Marker>(reliabilityMarkerName_, 1);
         }
 
+        // degree to radian
+        initialPoseYaw_ *= M_PI / 180.0;
+
         // set initial pose
-        mclPose_.setPose(initialPose_[0], initialPose_[1], initialPose_[2]);
+        mclPose_.setPose(initialPoseX_, initialPoseY_, initialPoseYaw_);
         resetParticlesDistribution();
         odomPose_.setPose(0.0, 0.0, 0.0);
         deltaX_ = deltaY_ = deltaDist_ = deltaYaw_ = 0.0;
@@ -1368,9 +1379,9 @@ private:
         double yawo = mclPose_.getYaw();
         double wo = 1.0 / (double)particlesNum_;
         for (int i = 0; i < particlesNum_; ++i) {
-            double x = xo + nrand(initialNoise_[0]);
-            double y = yo + nrand(initialNoise_[1]);
-            double yaw = yawo + nrand(initialNoise_[2]);
+            double x = xo + nrand(initialNoiseX_);
+            double y = yo + nrand(initialNoiseY_);
+            double yaw = yawo + nrand(initialNoiseYaw_);
             particles_[i].setPose(x, y, yaw);
             particles_[i].setW(wo);
         }

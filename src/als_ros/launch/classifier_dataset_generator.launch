@@ -14,7 +14,7 @@
 
     <!-- Number of moving obstacles
          Moving obstacles are stimulated when the dataset is created if the number is larger than 0. -->
-        <arg name="obstacles_num" default="20" />
+    <arg name="obstacles_num" default="20" />
 
     <!-- Scan parameters -->
     <arg name="angle_min" default="-135.0" /> <!-- degrees -->

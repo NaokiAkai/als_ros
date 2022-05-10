@@ -33,12 +33,23 @@
          the localizer broadcasts transformation between the map and odometry frames. -->
     <arg name="broadcast_tf" default="true" />
 
-    <!-- If use_odom_tf is false, transformation from the map to base link is directly broadcast. -->
+    <!-- If use_odom_tf is false, transformation from the map to base link is directly broadcast.
+         If your odometry node does not broadcast transformation between odometry and base link, this must be false. -->
     <arg name="use_odom_tf" default="true" />
 
 
 
     <!-- MCL parameters -->
+
+    <!-- Initial pose (x [m], y [m], yaw [deg]) -->
+    <arg name="initial_pose_x" default="0.0" />
+    <arg name="initial_pose_y" default="0.0" />
+    <arg name="initial_pose_yaw" default="0.0" />
+
+    <!-- Initial noise -->
+    <arg name="initial_noise_x" default="0.02" />
+    <arg name="initial_noise_y" default="0.02" />
+    <arg name="initial_noise_yaw" default="0.01" />
 
     <!-- 0: likelihood field model, 1, beam model, 2: class conditional measurement model
          The class conditional measurement model is highly recommended for pose tracking. -->
@@ -133,8 +144,8 @@
 
     <!-- Time threshold to fuse the global-localization (GL)-based pose sampling result.
          If time difference between the laser scan used for MCL and GL pose sampling result exceeds the threshold,
-         the pose sampling result is not used.
-         gl_sampled_pose_time_th must be larger than 0. -->
+         the pose sampling result is not fused.
+         gl_sampled_pose_time_th must be larger than 0 (unit is second). -->
     <arg name="gl_sampled_pose_time_th" default="1.0" />
 
     <!-- Assume that the predictive distribution can be approximately represented by the Gaussian mixture model (GMM)
@@ -157,12 +168,6 @@
 
     <!-- localization Hz -->
     <arg name="localization_hz" default="10.0" />
-
-    <!-- Initial pose (x [m], y [m], yaw [deg]) -->
-    <rosparam param="/$(arg node_name)/initial_pose" > [0.0, 0.0, 0.0] </rosparam >
-
-    <!-- Parameters used for determining initial particles distribution (x, y, yaw) -->
-    <rosparam param="/$(arg node_name)/initial_noise" > [0.02, 0.02, 0.01] </rosparam >
 
     <!-- Parameters used for randam particles in resampling (x, y, yaw).
          These parameters are used when use_augmented_mcl or add_random_particles_in_resampling is true. -->
@@ -251,6 +256,13 @@
 
         <param name="broadcast_tf" value="$(arg broadcast_tf)" type="bool" />
         <param name="use_odom_tf" value="$(arg use_odom_tf)" type="bool" />
+
+        <param name="initial_pose_x" value="$(arg initial_pose_x)" type="double" />
+        <param name="initial_pose_y" value="$(arg initial_pose_y)" type="double" />
+        <param name="initial_pose_yaw" value="$(arg initial_pose_yaw)" type="double" />
+        <param name="initial_noise_x" value="$(arg initial_noise_x)" type="double" />
+        <param name="initial_noise_y" value="$(arg initial_noise_y)" type="double" />
+        <param name="initial_noise_yaw" value="$(arg initial_noise_yaw)" type="double" />
 
         <param name="particle_num" value="$(arg particle_num)" type="int" />
 
