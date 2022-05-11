@@ -7,7 +7,9 @@ An Advanced Localization System [1] for Robot Operating System use (als_ros) is 
 - Misalignment recognition using Markov random fields with fully connected latent variables [4],
 - Quick re-localization based on fusion of pose tracking and global localization via the importance sampling [5].
 
-These details can be seen at [Reliable Monte Carlo Localization for Mobile Robots (arXiv preprint)](http://).
+These details can be seen at [Reliable Monte Carlo Localization for Mobile Robots (arXiv preprint)](https://arxiv.org/abs/2205.04769).
+
+[Demonstration video](https://www.youtube.com/watch?v=wsoXvUgJvWk) showing comparison of als_ros with ROS amcl.
 
 
 
@@ -87,17 +89,19 @@ Descriptions for all the parameters are written in the launch files. I am planni
 
 # Citation
 
-[arXiv preprint](https://) is available. If you used als_ros in your research, please cite the preprint.
+[arXiv preprint](https://arxiv.org/abs/2205.04769) is available. If you used als_ros in your research, please cite the preprint.
 
 ```
-Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:1111.22222, 2022.
+Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:2205.04769, 2022.
 ```
+
+
 
 ```
 @article{Akai2022arXiv:ReliableMC,
     title = {Reliable Monte Carlo Localization for Mobile Robots},
     author = {Akai, Naoki},
-    journal = {arXiv:1111.22222},
+    journal = {arXiv:2205.04769},
     year = {2022}
 }
 ```
