@@ -37,10 +37,10 @@ add_executable(gl_pose_sampler src/gl_pose_sampler.cpp)
 target_link_libraries(gl_pose_sampler ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(classifier_dataset_generator src/classifier_dataset_generator.cpp)
-target_link_libraries(classifier_dataset_generator ${catkin_LIBRARIES})
+target_link_libraries(classifier_dataset_generator ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(mae_classifier_learning src/mae_classifier_learning.cpp)
-target_link_libraries(mae_classifier_learning ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(mae_classifier_learning ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
 add_executable(evaluator src/evaluator.cpp)
 target_link_libraries(evaluator ${catkin_LIBRARIES})
