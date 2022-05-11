@@ -126,5 +126,5 @@ Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:2205.04
 
 # License
 
-Mozilla Public License Version 2.0
+Apache License 2.0
 
