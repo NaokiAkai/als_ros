@@ -89,16 +89,17 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
+        map:
+          ground_truth:
+            {}
+          odom:
+            base_link:
+              laser:
+                {}
+          scanned_ground_truth:
+            {}
         world:
-          map:
-            ground_truth:
-              {}
-            odom:
-              base_link:
-                laser:
-                  {}
-            scanned_ground_truth:
-              {}
+          {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -202,6 +203,14 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /reliability_marker_name
+      Name: Reliability marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -214,7 +223,7 @@ Visualization Manager:
       Color: 239; 41; 41
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -229,15 +238,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /reliability_marker_name
-      Name: Reliability marker
-      Namespaces:
-        reliability_marker_namespace: true
-      Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -250,7 +251,7 @@ Visualization Manager:
       Color: 0; 0; 255
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -265,7 +266,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -278,7 +279,7 @@ Visualization Manager:
       Color: 0; 255; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -293,7 +294,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /failure_probability_marker_name

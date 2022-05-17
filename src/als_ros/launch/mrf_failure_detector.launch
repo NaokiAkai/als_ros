@@ -29,6 +29,10 @@
     <!-- Parameters related to the failure probability calculation -->
     <!-- These values must be positive. -->
     <arg name="min_valid_residual_errors_num" default="10" />
+    <!-- If you want to reduce the computational cost,
+         please set small values to max_residual_errors_num, max_lpb_computation_num, and sampling_num.
+         In particular, max_residual_errors_num is significant. -->
+    <arg name="max_residual_errors_num" default="500" />
     <arg name="max_lpb_computation_num" default="1000" />
     <arg name="sampling_num" default="1000" />
     <!-- These values must be included from 0 to 1. -->
@@ -65,6 +69,7 @@
         <param name="max_residual_error" value="$(arg max_residual_error)" type="double" />
         <param name="residual_error_resolution" value="$(arg residual_error_resolution)" type="double" />
         <param name="min_valid_residual_errors_num" value="$(arg min_valid_residual_errors_num)" type="int" />
+        <param name="max_residual_errors_num" value="$(arg max_residual_errors_num)" type="int" />
         <param name="max_lpb_computation_num" value="$(arg max_lpb_computation_num)" type="int" />
         <param name="sampling_num" value="$(arg sampling_num)" type="int" />
         <param name="misalignment_ratio_threshold" value="$(arg misalignment_ratio_threshold)" type="double" />

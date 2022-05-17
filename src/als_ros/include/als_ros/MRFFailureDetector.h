@@ -45,7 +45,7 @@ private:
     // parametsrs
     double maxResidualError_;
     double NDMean_, NDVar_, NDNormConst_, EDLambda_;
-    int minValidResidualErrorsNum_;
+    int minValidResidualErrorsNum_, maxResidualErrorsNum_;
     int maxLPBComputationNum_;
     int samplingNum_;
     double residualErrorReso_;
@@ -53,6 +53,8 @@ private:
     std::vector<double> transitionProbMat_;
 
     sensor_msgs::LaserScan residualErrors_;
+    std::vector<double> usedResidualErrors_;
+    std::vector<int> usedScanIndices_;
     bool canUpdateResidualErrors_, gotResidualErrors_;
     double failureDetectionHz_;
 
@@ -79,6 +81,7 @@ public:
         maxResidualError_(1.0),
         residualErrorReso_(0.05),
         minValidResidualErrorsNum_(10),
+        maxResidualErrorsNum_(200),
         maxLPBComputationNum_(1000),
         samplingNum_(1000),
         misalignmentRatioThreshold_(0.1),
@@ -106,6 +109,7 @@ public:
         nh_.param("max_residual_error", maxResidualError_, maxResidualError_);
         nh_.param("residual_error_resolution", residualErrorReso_, residualErrorReso_);
         nh_.param("min_valid_residual_errors_num", minValidResidualErrorsNum_, minValidResidualErrorsNum_);
+        nh_.param("max_residual_errors_num", maxResidualErrorsNum_, maxResidualErrorsNum_);
         nh_.param("max_lpb_computation_num", maxLPBComputationNum_, maxLPBComputationNum_);
         nh_.param("sampling_num", samplingNum_, samplingNum_);
         nh_.param("misalignment_ratio_threshold", misalignmentRatioThreshold_, misalignmentRatioThreshold_);
@@ -166,24 +170,41 @@ public:
     inline double getFailureDetectionHz(void) { return failureDetectionHz_; }
 
     void predictFailureProbability(void) {
-        std::vector<double> residualErrors;
+        std::vector<double> validResidualErrors;
+        std::vector<int> validScanIndices;
         for (int i = 0; i < (int)residualErrors_.intensities.size(); ++i) {
             double e = residualErrors_.intensities[i];
-            if (0.0 <= e && e <= maxResidualError_)
-                residualErrors.push_back(e);
+            if (0.0 <= e && e <= maxResidualError_) {
+                validResidualErrors.push_back(e);
+                validScanIndices.push_back(i);
+            }
         }
 
-        if ((int)residualErrors.size() < minValidResidualErrorsNum_) {
+        int validResidualErrorsSize = (int)validResidualErrors.size();
+        if (validResidualErrorsSize <= minValidResidualErrorsNum_) {
             std::cerr << "WARNING: Number of validResidualErrors is less than the expected threshold number." <<
                 " The threshold is " << minValidResidualErrorsNum_ <<
-                ", but the number of validResidualErrors " << (int)residualErrors.size() << "." << std::endl;
+                ", but the number of validResidualErrors " << validResidualErrorsSize << "." << std::endl;
             failureProbability_ = -1.0;
             return;
+        } else if (validResidualErrorsSize <= maxResidualErrorsNum_) {
+            usedResidualErrors_ = validResidualErrors;
+            usedScanIndices_ = validScanIndices;
+        } else {
+            usedResidualErrors_.resize(maxResidualErrorsNum_);
+            usedScanIndices_.resize(maxResidualErrorsNum_);
+            for (int i = 0; i < maxResidualErrorsNum_; ++i) {
+                int idx = rand() % (int)validResidualErrors.size();
+                usedResidualErrors_[i] = validResidualErrors[idx];
+                usedScanIndices_[i] = validScanIndices[idx];
+                validResidualErrors.erase(validResidualErrors.begin() + idx);
+                validScanIndices.erase(validScanIndices.begin() + idx);
+            }
         }
 
-        std::vector<std::vector<double>> likelihoodVectors = getLikelihoodVectors(residualErrors);
+        std::vector<std::vector<double>> likelihoodVectors = getLikelihoodVectors(usedResidualErrors_);
         std::vector<std::vector<double>> measurementClassProbabilities = estimateMeasurementClassProbabilities(likelihoodVectors);
-        setAllMeasurementClassProbabilities(residualErrors, measurementClassProbabilities);
+        setAllMeasurementClassProbabilities(usedResidualErrors_, measurementClassProbabilities);
         failureProbability_ = predictFailureProbabilityBySampling(measurementClassProbabilities);
     }
 
@@ -196,22 +217,29 @@ public:
         if (publishClassifiedScans_) {
             std::vector<int> residualErrorClasses = getResidualErrorClasses();
             sensor_msgs::LaserScan alignedScan, misalignedScan, unknownScan;
-            alignedScan = misalignedScan = unknownScan = residualErrors_;
-            int idx = 0;
-            for (int i = 0; i < (int)residualErrors_.ranges.size(); ++i) {
-                double e = residualErrors_.intensities[i];
-                if (0.0 <= e && e <= maxResidualError_) {
-                    if (residualErrorClasses[idx] == ALIGNED)
-                        misalignedScan.ranges[i] = unknownScan.ranges[i] = 0.0;
-                    else if (residualErrorClasses[idx] == MISALIGNED)
-                        alignedScan.ranges[i] = unknownScan.ranges[i] = 0.0;
-                    else
-                        alignedScan.ranges[i] = misalignedScan.ranges[i] = 0.0;
-                    idx++;
-                } else {
-                    alignedScan.ranges[i] = misalignedScan.ranges[i] = 0.0;
-                }
-                alignedScan.intensities[i] = misalignedScan.intensities[i] = unknownScan.intensities[i] = 0.0;
+            alignedScan.header = misalignedScan.header = unknownScan.header = residualErrors_.header;
+            alignedScan.range_min = misalignedScan.range_min = unknownScan.range_min = residualErrors_.range_min;
+            alignedScan.range_max = misalignedScan.range_max = unknownScan.range_max = residualErrors_.range_max;
+            alignedScan.angle_min = misalignedScan.angle_min = unknownScan.angle_min = residualErrors_.angle_min;
+            alignedScan.angle_max = misalignedScan.angle_max = unknownScan.angle_max = residualErrors_.angle_max;
+            alignedScan.angle_increment = misalignedScan.angle_increment = unknownScan.angle_increment = residualErrors_.angle_increment;
+            alignedScan.time_increment = misalignedScan.time_increment = unknownScan.time_increment = residualErrors_.time_increment;
+            alignedScan.scan_time = misalignedScan.scan_time = unknownScan.scan_time = residualErrors_.scan_time;
+            int size = (int)residualErrors_.ranges.size();
+            alignedScan.ranges.resize(size);
+            misalignedScan.ranges.resize(size);
+            unknownScan.ranges.resize(size);
+            alignedScan.intensities.resize(size);
+            misalignedScan.intensities.resize(size);
+            unknownScan.intensities.resize(size);
+            for (int i = 0; i < (int)usedResidualErrors_.size(); ++i) {
+                int idx = usedScanIndices_[i];
+                if (residualErrorClasses[i] == ALIGNED)
+                    alignedScan.ranges[idx] = residualErrors_.ranges[idx];
+                else if (residualErrorClasses[i] == MISALIGNED)
+                    misalignedScan.ranges[idx] = residualErrors_.ranges[idx];
+                else
+                    unknownScan.ranges[idx] = residualErrors_.ranges[idx];
             }
             alignedScanPub_.publish(alignedScan);
             misalignedScanPub_.publish(misalignedScan);
