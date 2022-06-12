@@ -168,6 +168,7 @@
 
     <!-- localization Hz -->
     <arg name="localization_hz" default="10.0" />
+    <arg name="transform_tolerance" default="1.0" />
 
     <!-- Parameters used for randam particles in resampling (x, y, yaw).
          These parameters are used when use_augmented_mcl or add_random_particles_in_resampling is true. -->
@@ -307,5 +308,6 @@
         <param name="gmm_angular_variance" value="$(arg gmm_angular_variance)" type="double" />
 
         <param name="localization_hz" value="$(arg localization_hz)" type="double" />
+        <param name="transform_tolerance" value="$(arg transform_tolerance)" type="double" />
     </node >
 </launch >

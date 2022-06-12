@@ -111,6 +111,7 @@ private:
     tf::TransformListener tfListener_;
     bool isInitialized_;
     double localizationHz_;
+    double transform_tolerance_;
 
     // reliability estimation
     bool estimateReliability_;
@@ -223,6 +224,7 @@ public:
         gmmAngularVariance_(0.1),
         predDistUnifRate_(0.05),
         localizationHz_(10.0),
+        transform_tolerance_(1.0),
         gotMap_(false),
         scanMightInvalid_(false),
         gotScan_(false),
@@ -309,6 +311,7 @@ public:
 
         // other parameters
         nh_.param("localization_hz", localizationHz_, localizationHz_);
+        nh_.param("transform_tolerance", transform_tolerance_, transform_tolerance_);
 
         // set subscribers
         scanSub_ = nh_.subscribe(scanName_, 10, &MCL::scanCB, this);
@@ -1112,8 +1115,10 @@ public:
             tf2::convert(poseOnOdom, odom2baseTrans);
 
             tf2::Transform map2odomTrans = map2baseTrans * odom2baseTrans.inverse();
+            // add transform_tolerance: send a transform that is good up until a tolerance time so that odom can be used
+            ros::Time transform_expiration = (mclPoseStamp_ + ros::Duration(transform_tolerance_));
             geometry_msgs::TransformStamped map2odomStampedTrans;
-            map2odomStampedTrans.header.stamp = mclPoseStamp_;
+            map2odomStampedTrans.header.stamp = transform_expiration;
             map2odomStampedTrans.header.frame_id = mapFrame_;
             map2odomStampedTrans.child_frame_id = odomFrame_;
             tf2::convert(map2odomTrans, map2odomStampedTrans.transform);
