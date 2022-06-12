@@ -2,9 +2,17 @@
  * als_ros: An Advanced Localization System for ROS use with 2D LiDAR
  * Copyright (C) 2022 Naoki Akai
  *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at https://mozilla.org/MPL/2.0/.
+ * Licensed under the Apache License, Version 2.0 (the “License”);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an “AS IS” BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @author Naoki Akai
  ****************************************************************************/
@@ -111,7 +119,7 @@ private:
     tf::TransformListener tfListener_;
     bool isInitialized_;
     double localizationHz_;
-    double transform_tolerance_;
+    double transformTolerance_;
 
     // reliability estimation
     bool estimateReliability_;
@@ -224,7 +232,7 @@ public:
         gmmAngularVariance_(0.1),
         predDistUnifRate_(0.05),
         localizationHz_(10.0),
-        transform_tolerance_(1.0),
+        transformTolerance_(1.0),
         gotMap_(false),
         scanMightInvalid_(false),
         gotScan_(false),
@@ -311,7 +319,7 @@ public:
 
         // other parameters
         nh_.param("localization_hz", localizationHz_, localizationHz_);
-        nh_.param("transform_tolerance", transform_tolerance_, transform_tolerance_);
+        nh_.param("transform_tolerance", transformTolerance_, transformTolerance_);
 
         // set subscribers
         scanSub_ = nh_.subscribe(scanName_, 10, &MCL::scanCB, this);
@@ -1116,9 +1124,9 @@ public:
 
             tf2::Transform map2odomTrans = map2baseTrans * odom2baseTrans.inverse();
             // add transform_tolerance: send a transform that is good up until a tolerance time so that odom can be used
-            ros::Time transform_expiration = (mclPoseStamp_ + ros::Duration(transform_tolerance_));
+            ros::Time transformExpiration = (mclPoseStamp_ + ros::Duration(transformTolerance_));
             geometry_msgs::TransformStamped map2odomStampedTrans;
-            map2odomStampedTrans.header.stamp = transform_expiration;
+            map2odomStampedTrans.header.stamp = transformExpiration;
             map2odomStampedTrans.header.frame_id = mapFrame_;
             map2odomStampedTrans.child_frame_id = odomFrame_;
             tf2::convert(map2odomTrans, map2odomStampedTrans.transform);

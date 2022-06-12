@@ -168,6 +168,8 @@
 
     <!-- localization Hz -->
     <arg name="localization_hz" default="10.0" />
+
+    <!-- transform tolerance between mcl pose and odometry in second -->
     <arg name="transform_tolerance" default="1.0" />
 
     <!-- Parameters used for randam particles in resampling (x, y, yaw).
