@@ -43,6 +43,7 @@ namespace als_ros {
 
 class MCL {
 private:
+    // node handler
     ros::NodeHandle nh_;
 
     // subscribers
@@ -162,6 +163,30 @@ public:
 
     // inline getting functions
     inline double getLocalizationHz(void) { return localizationHz_; }
+    inline std::string getMapFrame(void) { return mapFrame_; }
+    inline sensor_msgs::LaserScan getScan(void) { return scan_; }
+    inline int getParticlesNum(void) { return particlesNum_; }
+    inline Pose getParticlePose(int i) { return particles_[i].getPose(); }
+    inline double getParticleW(int i) { return particles_[i].getW(); }
+    inline Pose getBaseLink2Laser(void) { return baseLink2Laser_; }
+    inline int getScanStep(void) { return scanStep_; }
+    inline int getMaxLikelihoodParticleIdx(void) { return maxLikelihoodParticleIdx_; }
+    inline double getNormConstHit(void) { return normConstHit_; }
+    inline double getDenomHit(void) { return denomHit_; }
+    inline double getZHit(void) { return zHit_; }
+    inline double getMeasurementModelRandom(void) { return measurementModelRandom_; }
+
+    // inline setting functions
+    inline void setMCLPoseStamp(ros::Time stamp) { mclPoseStamp_ = stamp; }
+    inline void setParticleW(int i, double w) { particles_[i].setW(w); }
+    inline void setTotalLikelihood(double totalLikelihood) { totalLikelihood_ = totalLikelihood; }
+    inline void setAverageLikelihood(double averageLikelihood) { averageLikelihood_ = averageLikelihood; }
+    inline void setMaxLikelihood(double maxLikelihood) { maxLikelihood_ = maxLikelihood; }
+    inline void setMaxLikelihoodParticleIdx(int maxLikelihoodParticleIdx) { maxLikelihoodParticleIdx_ = maxLikelihoodParticleIdx; }
+
+    // inline other functions
+    void clearLikelihoodShiftedSteps(void) { likelihoodShiftedSteps_.clear(); }
+    void addLikelihoodShiftedSteps(bool flag) { likelihoodShiftedSteps_.push_back(flag); }
 
     MCL(void):
         nh_("~"),
