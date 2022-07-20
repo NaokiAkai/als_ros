@@ -1,0 +1,79 @@
+<!-- slamer.launch -->
+<launch >
+    <!-- YAML file of an indoor semantic map (ism) -->
+    <arg name="ism_yaml_file" default="/home/akai/Dropbox/git/AutoNavi/ros/maps/e2bs4f/ism.yaml" />
+
+    <!-- Node name -->
+    <arg name="node_name" default="slamer" />
+
+    <!-- Input messages -->
+    <arg name="scan_name" default="/scan" /> <!-- sensor_msgs::LaserScan -->
+    <arg name="odom_name" default="/odom" /> <!-- nav_msgs::Odometry -->
+    <arg name="map_name" default="/map" /> <!-- nav_msgs::OccupancyGrid -->
+
+    <!-- Output messages -->
+    <arg name="ism_points_name" default="/ism_points" /> <!-- sensor_msgs::PointCloud2 -->
+    <arg name="colored_scan_points_name" default="/slamer_colored_scan_points" /> <!-- sensor_msgs::PointCloud2 -->
+    <arg name="line_objects_name" default="/slamer_line_objects" /> <!-- visualization_msgs::Marker -->
+    <arg name="spatial_line_objects_name" default="/slamer_spatial_line_objects" /> <!-- visualization_msgs::Marker -->
+
+    <!-- Publisher flags -->
+    <arg name="publish_ism_points" default="true" />
+    <arg name="publish_colored_scan_points" default="true" />
+
+    <!-- Line object recognition parameters
+         Units regarding length and angle are meter and degree. -->
+    <arg name="scan_range_max" default="20.0" />
+    <arg name="scan_map_reso" default="0.05" />
+    <arg name="scan_orientation_hist_reso" default="5.0" />
+    <arg name="min_scan_orientation_prob" default="0.1" />
+    <arg name="min_spatial_line_object_length" default="0.5" />
+    <arg name="max_spatial_line_object_length" default="2.5" />
+    <arg name="merge_points_dist" default="0.5" />
+
+    <!-- Initial pose (x [m], y [m], yaw [deg]) -->
+    <arg name="initial_pose_x" default="0.0" />
+    <arg name="initial_pose_y" default="0.0" />
+    <arg name="initial_pose_yaw" default="-180.0" />
+
+    <!-- Initial noise -->
+    <arg name="initial_noise_x" default="0.02" />
+    <arg name="initial_noise_y" default="0.02" />
+    <arg name="initial_noise_yaw" default="0.01" />
+
+    <!-- 0: likelihood field model, 1, beam model, 2: class conditional measurement model
+         The class conditional measurement model is highly recommended for pose tracking. -->
+    <arg name="measurement_model_type" default="0" />
+
+    <!-- SLAMER node -->
+    <node name="$(arg node_name)" pkg="als_ros" type="slamer" args="$(arg ism_yaml_file)" output="screen" >
+        <param name="scan_name" value="$(arg scan_name)" type="string" />
+        <param name="odom_name" value="$(arg odom_name)" type="string" />
+        <param name="map_name" value="$(arg map_name)" type="string" />
+
+        <param name="ism_points_name" value="$(arg ism_points_name)" type="string" />
+        <param name="colored_scan_points_name" value="$(arg colored_scan_points_name)" type="string" />
+        <param name="line_objects_name" value="$(arg line_objects_name)" type="string" />
+        <param name="spatial_line_objects_name" value="$(arg spatial_line_objects_name)" type="string" />
+        <param name="publish_ism_points" value="$(arg publish_ism_points)" type="bool" />
+        <param name="publish_colored_scan_points" value="$(arg publish_colored_scan_points)" type="bool" />
+
+        <param name="scan_range_max" value="$(arg scan_range_max)" type="double" />
+        <param name="scan_map_reso" value="$(arg scan_map_reso)" type="double" />
+        <param name="scan_orientation_hist_reso" value="$(arg scan_orientation_hist_reso)" type="double" />
+        <param name="min_scan_orientation_prob" value="$(arg min_scan_orientation_prob)" type="double" />
+        <param name="min_spatial_line_object_length" value="$(arg min_spatial_line_object_length)" type="double" />
+        <param name="max_spatial_line_object_length" value="$(arg max_spatial_line_object_length)" type="double" />
+        <param name="merge_points_dist" value="$(arg merge_points_dist)" type="double" />
+
+        <param name="initial_pose_x" value="$(arg initial_pose_x)" type="double" />
+        <param name="initial_pose_y" value="$(arg initial_pose_y)" type="double" />
+        <param name="initial_pose_yaw" value="$(arg initial_pose_yaw)" type="double" />
+
+        <param name="initial_noise_x" value="$(arg initial_noise_x)" type="double" />
+        <param name="initial_noise_y" value="$(arg initial_noise_y)" type="double" />
+        <param name="initial_noise_yaw" value="$(arg initial_noise_yaw)" type="double" />
+
+        <param name="measurement_model_type" value="$(arg measurement_model_type)" type="int" />
+    </node >
+</launch >
