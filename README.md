@@ -96,12 +96,12 @@ Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," Journal of Fi
 ```
 
 ```
-@article{Akai2022arXiv:ReliableMC,
+@article{Akai2023JFR:ReliableMC,
     title = {Reliable Monte Carlo Localization for Mobile Robots},
     author = {Akai, Naoki},
     journal = {Journal of Field Robotics},
     volume = {40},
-    number = {3}
+    number = {3},
     pages = {595--613},
     year = {2023}
 }
