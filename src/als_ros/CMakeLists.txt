@@ -51,6 +51,9 @@ include_directories(
 add_executable(mcl src/mcl.cpp)
 target_link_libraries(mcl ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${YAMLCPP_LIBRARIES})
 
+add_executable(sm src/sm.cpp)
+target_link_libraries(sm ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${YAMLCPP_LIBRARIES})
+
 add_executable(mrf_failure_detector src/mrf_failure_detector.cpp)
 target_link_libraries(mrf_failure_detector ${catkin_LIBRARIES})
 

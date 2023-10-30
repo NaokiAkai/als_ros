@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 #include <ros/ros.h>
-#include <als_ros/MCL.h>
+#include <als_ros/SM.h>
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "mcl");
@@ -29,22 +29,24 @@ int main(int argc, char **argv) {
 
     while (ros::ok()) {
         ros::spinOnce();
-        mcl.updateParticlesByMotionModel();
+//        mcl.updateParticlesByMotionModel();
         mcl.setCanUpdateScan(false);
-        mcl.calculateLikelihoodsByMeasurementModel();
-        mcl.calculateLikelihoodsByDecisionModel();
-        mcl.calculateGLSampledPosesLikelihood();
-        mcl.calculateAMCLRandomParticlesRate();
-        mcl.calculateEffectiveSampleSize();
-        mcl.estimatePose();
-        mcl.resampleParticles();
-        // mcl.plotScan();
-        // mcl.plotWorld(50.0);
-        mcl.publishROSMessages();
+//        mcl.scanMatching();
+        mcl.scanMatching2();
+//        mcl.calculateLikelihoodsByMeasurementModel();
+//        mcl.calculateLikelihoodsByDecisionModel();
+//        mcl.calculateGLSampledPosesLikelihood();
+//        mcl.calculateAMCLRandomParticlesRate();
+//        mcl.calculateEffectiveSampleSize();
+//        mcl.estimatePose();
+//        mcl.resampleParticles();
+//        mcl.plotScan();
+        mcl.plotWorld(10.0);
+//        mcl.publishROSMessages();
         mcl.broadcastTF();
-        // mcl.plotLikelihoodMap();
+//        mcl.plotLikelihoodMap();
         mcl.setCanUpdateScan(true);
-        mcl.printResult();
+//        mcl.printResult();
         loopRate.sleep();
     }
 

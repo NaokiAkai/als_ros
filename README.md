@@ -89,20 +89,21 @@ Descriptions for all the parameters are written in the launch files. I am planni
 
 # Citation
 
-[arXiv preprint](https://arxiv.org/abs/2205.04769) is available. If you used als_ros in your research, please cite the preprint.
+[arXiv preprint](https://arxiv.org/abs/2205.04769) and [journal paper](https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.22149) are available. If you used als_ros in your research, please cite the journal paper.
 
 ```
-Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:2205.04769, 2022.
+Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," Journal of Field Robotics, vol. 40, no.3, pp. 595-613, 2023.
 ```
-
-
 
 ```
 @article{Akai2022arXiv:ReliableMC,
     title = {Reliable Monte Carlo Localization for Mobile Robots},
     author = {Akai, Naoki},
-    journal = {arXiv:2205.04769},
-    year = {2022}
+    journal = {Journal of Field Robotics},
+    volume = {40},
+    number = {3}
+    pages = {595--613},
+    year = {2023}
 }
 ```
 
@@ -126,7 +127,7 @@ Naoki Akai. "Reliable Monte Carlo Localization for Mobile Robots," arXiv:2205.04
 
 # SLAMER
 
-
+A node for Simultaneous Localization And Map-assisted Environment Recognition (SLAMER) is also implemented in this repository. However, I do not consider to support it officially. Please refer [the SLAMER paper](https://arxiv.org/abs/2207.09909) if you want to know details. This work was presented at ICRA 2023.
 
 
 

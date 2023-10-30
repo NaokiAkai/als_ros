@@ -57,7 +57,7 @@
 
     <!-- Numbers of particles
          In this MCL package, the numbers of the particles are constant. -->
-    <arg name="particle_num" default="200" />
+    <arg name="particle_num" default="1000" />
 
     <!-- If use_augmented_mcl is true, augmented MCL is used.
          Augmented MCL adds random particles when doing resampling if MCL might fail localization.
@@ -93,7 +93,7 @@
     <!-- Dense measurements must not be used for localization. 
          You can control how much measurements are skipped by scan_step.
          scan_step must be larger than 0.
-         E.e., if you use Hokuyo LiDAR TOP-URG, it can measure 1081 points
+         E.g., if you use Hokuyo LiDAR TOP-URG, it can measure 1081 points
          and scan_step = 10 or 5 is recommended. -->
     <arg name="scan_step" default="5" />
 
@@ -105,7 +105,7 @@
     <arg name="z_short" default="0.2" />
     <arg name="z_max" default="0.05" />
     <arg name="z_rand" default="0.05" />
-    <arg name="var_hit" default="0.04" />
+    <arg name="var_hit" default="0.08" />
     <arg name="lambda_short" default="1.0" />
     <arg name="lambda_unknown" default="0.01" />
 
@@ -119,7 +119,7 @@
     <arg name="resample_threshold_ess" default="0.5" />
 
     <!-- If estimate_reliability is true, the reliability estimation is performed. -->
-    <arg name="estimate_reliability" default="true" />
+    <arg name="estimate_reliability" default="false" />
 
     <!-- A localization failure detector is used to perform the reliability estimation.
          0: mean absolute error.
@@ -166,11 +166,16 @@
          Note that Note that the failure detector just publishes failure probability. -->
     <arg name="use_mrf_failure_detector" default="false" />
 
+    <!-- Write pose if write_pose is true
+         Pose data (timestamp, x, y, yaw) will be recorded in the pose_log_file. -->
+    <arg name="write_pose" default="true" />
+    <arg name="pose_log_file" default="/tmp/als_ros_pose.txt" />
+
     <!-- localization Hz -->
     <arg name="localization_hz" default="10.0" />
 
     <!-- transform tolerance between mcl pose and odometry in second -->
-    <arg name="transform_tolerance" default="1.0" />
+    <arg name="transform_tolerance" default="0.0" />
 
     <!-- Parameters used for randam particles in resampling (x, y, yaw).
          These parameters are used when use_augmented_mcl or add_random_particles_in_resampling is true. -->
@@ -179,7 +184,7 @@
     <!-- Motion noises
          ddm and odm stand for differential drive model and omni directional model, respectively. -->
     <rosparam param="/$(arg node_name)/odom_noise_ddm" > [1.0, 0.5, 0.5, 1.5] </rosparam >
-    <rosparam param="/$(arg node_name)/odom_noise_odm" > [1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 1.0] </rosparam >
+    <rosparam param="/$(arg node_name)/odom_noise_odm" > [4.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0, 8.0] </rosparam >
 
     <!-- Parameters used in the reliability transition model
          If the values are large, reliability quickly decrease according to robot move.
@@ -308,6 +313,9 @@
         <param name="gl_sampled_pose_time_th" value="$(arg gl_sampled_pose_time_th)" type="double" />
         <param name="gmm_positional_variance" value="$(arg gmm_positional_variance)" type="double" />
         <param name="gmm_angular_variance" value="$(arg gmm_angular_variance)" type="double" />
+
+        <param name="write_pose" value="$(arg write_pose)" type="bool" />
+        <param name="pose_log_file" value="$(arg pose_log_file)" type="string" />
 
         <param name="localization_hz" value="$(arg localization_hz)" type="double" />
         <param name="transform_tolerance" value="$(arg transform_tolerance)" type="double" />

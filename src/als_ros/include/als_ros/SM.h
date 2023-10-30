@@ -137,10 +137,6 @@ private:
     // global-localization-based pose sampling
     bool useGLPoseSampler_, fuseGLPoseSamplerOnlyUnreliable_;
 
-    // pose record
-    bool writePose_;
-    std::string poseLogFile_;
-
     // constant parameters
     const double rad2deg_;
 
@@ -240,7 +236,7 @@ public:
         zRand_(0.05),
         varHit_(0.1),
         lambdaShort_(3.0),
-        lambdaUnknown_(1.0),
+        lambdaUnknown_(0.1),
         alphaSlow_(0.001),
         alphaFast_(0.9),
         omegaSlow_(0.0),
@@ -270,8 +266,6 @@ public:
         canUpdateGLSampledPoses_(true),
         canUseGLSampledPoses_(false),
         isGLSampledPosesUpdated_(false),
-        writePose_(false),
-        poseLogFile_("/tmp/als_ros_pose.txt"),
         tfListener_(),
         rad2deg_(180.0 / M_PI)
     {
@@ -347,10 +341,6 @@ public:
         nh_.param("gmm_positional_variance", gmmPositionalVariance_, gmmPositionalVariance_);
         nh_.param("gmm_angular_variance", gmmAngularVariance_, gmmAngularVariance_);
         nh_.param("pred_dist_unif_rate", predDistUnifRate_, predDistUnifRate_);
-
-        // write pose
-        nh_.param("write_pose", writePose_, writePose_);
-        nh_.param("pose_log_file", poseLogFile_, poseLogFile_);
 
         // other parameters
         nh_.param("localization_hz", localizationHz_, localizationHz_);
@@ -548,6 +538,324 @@ public:
                 }
             }
         }
+    }
+
+    template<typename T>
+    T **allocateMatrix(int row, int col) {
+        T **matrix = new T*[row];
+        for (int i = 0; i < row; ++i)
+            matrix[i] = new T[col]{0};
+        return matrix;
+    }
+
+    template<typename T>
+    bool deallocateMatrix(T **m, int row) {
+        for (int i = 0; i < row; ++i)
+            delete m[i];
+        delete [] m;
+        return true;
+    }
+
+    template<typename T>
+    T **multiplyMatrix(T **m1, int row1, int col1, T **m2, int row2, int col2) {
+        if (col1 != row2)
+            return nullptr;
+
+        T **ret = allocateMatrix<T>(row1, col2);
+        for(int i = 0; i < row1; i++) {
+            for(int j = 0; j < col2; j++) {
+                for(int k = 0; k < col1; k++)
+                    ret[i][j] += m1[i][k] * m2[k][j];
+            }
+        }
+        return ret;
+    }
+
+    template<typename T>
+    T **transposeMatrix(T **m, int row, int col) {
+        T **ret = allocateMatrix<double>(col, row);
+        for (int i = 0; i < row; ++i) {
+            for (int j = 0; j < col; ++j)
+                ret[j][i] = m[i][j];
+        }
+        return ret;
+    }
+
+    template<typename T>
+    T **inverseMatrix3x3(T **m) {
+        T det = 0; 
+        det = m[0][0] * m[1][1] * m[2][2];
+        det += m[1][0] * m[2][1] * m[0][2];
+        det += m[2][0] * m[0][1] * m[1][2];
+        det -= m[2][0] * m[1][1] * m[0][2];
+        det -= m[1][0] * m[0][1] * m[2][2];
+        det -= m[0][0] * m[2][1] * m[1][2];
+
+        T **ret = allocateMatrix<double>(3, 3);
+        ret[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
+        ret[0][1] = -(m[0][1] * m[2][2] - m[0][2] * m[2][1]) / det;
+        ret[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / det;
+        ret[1][0] = (m[1][0] * m[2][2] - m[1][2] * m[2][0]) / det;
+        ret[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det;
+        ret[1][2] = -(m[0][0] * m[1][2] - m[0][2] * m[1][0]) / det;
+        ret[2][0] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det;
+        ret[2][1] = -(m[0][0] * m[2][1] - m[0][1] * m[2][0]) / det;
+        ret[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det;
+        return ret;
+    }
+
+    void printtMatrixd(double **m, int row, int col, std::string name) {
+        for (int i = 0; i < row; ++i) {
+            for (int j = 0; j < col; ++j)
+                printf("%lf ", m[i][j]);
+            printf("\n");
+        }
+        printf("%s\n\n", name.c_str());
+    }    
+
+    void scanMatching(void) {
+        int iterNum = 50;
+        double epsilon = 0.5;
+        double dTheta = 0.01;
+        int scanSize = scan_.ranges.size();
+
+        double yaw = mclPose_.getYaw();
+        double sensorX = baseLink2Laser_.getX() * cos(yaw) - baseLink2Laser_.getY() * sin(yaw) + mclPose_.getX();
+        double sensorY = baseLink2Laser_.getX() * sin(yaw) + baseLink2Laser_.getY() * cos(yaw) + mclPose_.getY();
+        double sensorYaw = baseLink2Laser_.getYaw() + yaw;
+        Pose sensorPose(sensorX, sensorY, sensorYaw);
+
+        for (int i = 0; i < iterNum; ++i) {
+            double **es = allocateMatrix<double>(scanSize, 1);
+            for (int j = 0; j < scanSize; ++j) {
+                double r = scan_.ranges[j];
+                if (r < scan_.range_min || scan_.range_max < r) {
+                    es[j][0] = -1.0f;
+                    continue;
+                }
+                double t = sensorPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                double x = r * cos(t) + sensorPose.getX();
+                double y = r * sin(t) + sensorPose.getY();
+                int u, v;
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v)) {
+                    es[j][0] = distMap_.at<float>(v, u);
+                    if (es[j][0] > epsilon)
+                        es[j][0] = -1.0;
+                } else {
+                    es[j][0] = -1.0f;
+                }
+            }
+
+            double **J = allocateMatrix<double>(scanSize, 3);
+            Pose dxPose(sensorPose.getX() + mapResolution_, sensorPose.getY(), sensorPose.getYaw());
+            Pose dyPose(sensorPose.getX(), sensorPose.getY() + mapResolution_, sensorPose.getYaw());
+            Pose dyawPose(sensorPose.getX(), sensorPose.getY(), sensorPose.getYaw() + dTheta);
+            for (int j = 0; j < scanSize; ++j) {
+                float r = scan_.ranges[j];
+                if (r < scan_.range_min || scan_.range_max < r || es[j][0] < 0.0) {
+                    J[j][0] = J[j][1] = J[j][2] = 0.0f;
+                    continue;
+                }
+
+                int u, v;
+                float t, x, y;
+                t = dxPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dxPose.getX();
+                y = r * sin(t) + dxPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v))
+                    J[j][0] = (distMap_.at<float>(v, u) - es[j][0]) / mapResolution_;
+                else
+                    J[j][0] = 0.0;
+
+                t = dyPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dyPose.getX();
+                y = r * sin(t) + dyPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v))
+                    J[j][1] = (distMap_.at<float>(v, u) - es[j][0]) / mapResolution_;
+                else
+                    J[j][1] = 0.0;
+
+                t = dyawPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dyawPose.getX();
+                y = r * sin(t) + dyawPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v))
+                    J[j][2] = (distMap_.at<float>(v, u) - es[j][0]) / dTheta;
+                else
+                    J[j][2] = 0.0;
+            }
+
+            double **JT = transposeMatrix<double>(J, scanSize, 3);
+            double **JTJ = multiplyMatrix<double>(JT, 3, scanSize, J, scanSize, 3);
+            double **JTJInv = inverseMatrix3x3<double>(JTJ);
+            double **Je = multiplyMatrix<double>(JT, 3, scanSize, es, scanSize, 1);
+            double **g = multiplyMatrix<double>(JTJInv, 3, 3, Je, 3, 1);
+            // printtMatrixd(es, scanSize, 1, "es");
+            // printtMatrixd(J, scanSize, 3, "J");
+            // printtMatrixd(JT, 3, scanSize, "JT");
+            // printtMatrixd(JTJ, 3, 3, "JTJ");
+            // printtMatrixd(JTJInv, 3, 3, "JTJInv");
+            // printtMatrixd(Je, 3, 1, "Je");
+            // printtMatrixd(g, 3, 1, "g");
+            double sum = g[0][0] * g[0][0] + g[1][0] * g[1][0] + g[2][0] * g[2][0];
+            if (std::isnan(sum))
+                break;
+            if (sum < 10e-6)
+                break;
+            double x = sensorPose.getX() - g[0][0];
+            double y = sensorPose.getY() - g[1][0];
+            double yaw = sensorPose.getYaw() - g[2][0];
+            sensorPose.setPose(x, y, yaw);
+        }
+
+        yaw = sensorPose.getYaw();
+        double mclX = sensorPose.getX() - (baseLink2Laser_.getX() * cos(yaw) - baseLink2Laser_.getY() * sin(yaw));
+        double mclY = sensorPose.getY() - (baseLink2Laser_.getX() * sin(yaw) + baseLink2Laser_.getY() * cos(yaw));
+        double mclYaw = sensorPose.getYaw() - baseLink2Laser_.getYaw();
+        mclPose_.setPose(mclX, mclY, mclYaw);
+    }
+
+    double getCCMMProbError(int u, int v, double r) {
+        double d = (double)distMap_.at<float>(v, u);        
+        double pKnown = normConstHit_ * exp(-(d * d) * denomHit_) * mapResolution_;
+        double pUnknown = lambdaUnknown_ * exp(-lambdaUnknown_ * r) / (1.0 - exp(-lambdaUnknown_ * scan_.range_max)) * mapResolution_;
+        // printf("%lf ", 0.1 - (pKnown + pUnknown));
+        double e = 0.1 - (pKnown + pUnknown);
+        if (e < 0.0)
+            e = 0.0;
+        return e;
+    }
+
+    double getCCMMProb(int u, int v, double r) {
+        double cKnown = 0.5;
+        double cUnknown = 1.0 - cKnown;
+        double max = (normConstHit_ + zRand_ * pRand_) * mapResolution_ * cKnown + lambdaUnknown_ / (1.0 - exp(-lambdaUnknown_ * scan_.range_max)) * mapResolution_ * cUnknown;
+        //double max = (normConstHit_ * mapResolution_ + zRand_ * pRand_ )* cKnown;
+        double d = (double)distMap_.at<float>(v, u);
+        double pKnown = (normConstHit_ * exp(-(d * d) * denomHit_) + zRand_ * pRand_) * mapResolution_ * cKnown;
+        double pUnknown = lambdaUnknown_ * exp(-lambdaUnknown_ * r) / (1.0 - exp(-lambdaUnknown_ * scan_.range_max)) * mapResolution_ * cUnknown;
+        return d; // ICP
+        // return 1.0 - exp(-(d * d) * denomHit_); // normal distribution
+        return 1.0 - pKnown / ((normConstHit_ + zRand_ * pRand_) * mapResolution_ * cKnown); // likelihood field model
+        // return 1.0 - (pKnown + pUnknown) / max; // CCMM
+    }
+
+    void scanMatching2(void) {
+        int iterNum = 20;
+        double epsilon = 1.0;
+        double dTheta = 0.001;
+        int scanSize = scan_.ranges.size();
+
+        double yaw = mclPose_.getYaw();
+        double sensorX = baseLink2Laser_.getX() * cos(yaw) - baseLink2Laser_.getY() * sin(yaw) + mclPose_.getX();
+        double sensorY = baseLink2Laser_.getX() * sin(yaw) + baseLink2Laser_.getY() * cos(yaw) + mclPose_.getY();
+        double sensorYaw = baseLink2Laser_.getYaw() + yaw;
+        Pose sensorPose(sensorX, sensorY, sensorYaw);
+
+        for (int i = 0; i < iterNum; ++i) {
+            double **es = allocateMatrix<double>(scanSize, 1);
+            for (int j = 0; j < scanSize; ++j) {
+                double r = scan_.ranges[j];
+                if (r < scan_.range_min || scan_.range_max < r) {
+                    es[j][0] = -1.0f;
+                    continue;
+                }
+                double t = sensorPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                double x = r * cos(t) + sensorPose.getX();
+                double y = r * sin(t) + sensorPose.getY();
+                int u, v;
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v)) {
+                    // es[j][0] = getCCMMProbError(u, v, r);
+                    es[j][0] = getCCMMProb(u, v, r);
+                    if (es[j][0] > epsilon)
+                        es[j][0] = -1.0;
+                } else {
+                    es[j][0] = -1.0f;
+                }
+            }
+
+            double **J = allocateMatrix<double>(scanSize, 3);
+            Pose dxPose(sensorPose.getX() + mapResolution_, sensorPose.getY(), sensorPose.getYaw());
+            Pose dyPose(sensorPose.getX(), sensorPose.getY() + mapResolution_, sensorPose.getYaw());
+            Pose dyawPose(sensorPose.getX(), sensorPose.getY(), sensorPose.getYaw() + dTheta);
+            for (int j = 0; j < scanSize; ++j) {
+                float r = scan_.ranges[j];
+                if (r < scan_.range_min || scan_.range_max < r || es[j][0] < 0.0) {
+                    J[j][0] = J[j][1] = J[j][2] = 0.0f;
+                    continue;
+                }
+
+                int u, v;
+                float t, x, y;
+                t = dxPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dxPose.getX();
+                y = r * sin(t) + dxPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v)) {
+                    // J[j][0] = (getCCMMProbError(u, v, r) - es[j][0]) / mapResolution_;
+                    J[j][0] = (getCCMMProb(u, v, r) - es[j][0]) / mapResolution_;
+                } else {
+                    J[j][0] = 0.0;
+                }
+
+                t = dyPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dyPose.getX();
+                y = r * sin(t) + dyPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v)) {
+                    // J[j][1] = (getCCMMProbError(u, v, r) - es[j][0]) / mapResolution_;
+                    J[j][1] = (getCCMMProb(u, v, r) - es[j][0]) / mapResolution_;
+                } else {
+                    J[j][1] = 0.0;
+                }
+
+                t = dyawPose.getYaw() + j * scan_.angle_increment + scan_.angle_min;
+                x = r * cos(t) + dyawPose.getX();
+                y = r * sin(t) + dyawPose.getY();
+                xy2uv(x, y, &u, &v);
+                if (onMap(u, v)) {
+                    // J[j][2] = (getCCMMProbError(u, v, r) - es[j][0]) / dTheta;
+                    J[j][2] = (getCCMMProb(u, v, r) - es[j][0]) / dTheta;
+                } else {
+                    J[j][2] = 0.0;
+                }
+            }
+
+            double **JT = transposeMatrix<double>(J, scanSize, 3);
+            double **JTJ = multiplyMatrix<double>(JT, 3, scanSize, J, scanSize, 3);
+            double **JTJInv = inverseMatrix3x3<double>(JTJ);
+            double **Je = multiplyMatrix<double>(JT, 3, scanSize, es, scanSize, 1);
+            double **g = multiplyMatrix<double>(JTJInv, 3, 3, Je, 3, 1);
+            // printtMatrixd(es, scanSize, 1, "es");
+            // printtMatrixd(J, scanSize, 3, "J");
+            // printtMatrixd(JT, 3, scanSize, "JT");
+            // printtMatrixd(JTJ, 3, 3, "JTJ");
+            // printtMatrixd(JTJInv, 3, 3, "JTJInv");
+            // printtMatrixd(Je, 3, 1, "Je");
+            // printtMatrixd(g, 3, 1, "g");
+            double x = sensorPose.getX() - g[0][0];
+            double y = sensorPose.getY() - g[1][0];
+            double yaw = sensorPose.getYaw() - g[2][0];
+            //double x = sensorPose.getX() + g[0][0];
+            //double y = sensorPose.getY() + g[1][0];
+            //double yaw = sensorPose.getYaw() + g[2][0];
+            sensorPose.setPose(x, y, yaw);
+            double sum = g[0][0] * g[0][0] + g[1][0] * g[1][0] + g[2][0] * g[2][0];
+            if (std::isnan(sum))
+                break;
+            if (sum < 10e-6)
+                break;
+        }
+
+        yaw = sensorPose.getYaw();
+        double mclX = sensorPose.getX() - (baseLink2Laser_.getX() * cos(yaw) - baseLink2Laser_.getY() * sin(yaw));
+        double mclY = sensorPose.getY() - (baseLink2Laser_.getX() * sin(yaw) + baseLink2Laser_.getY() * cos(yaw));
+        double mclYaw = sensorPose.getYaw() - baseLink2Laser_.getYaw();
+        mclPose_.setPose(mclX, mclY, mclYaw);
     }
 
     void calculateLikelihoodsByMeasurementModel(void) {
@@ -855,15 +1163,6 @@ public:
     }
 
     void estimatePose(void) {
-        static FILE *fp;
-        if (fp == NULL && writePose_) {
-            fp = fopen(poseLogFile_.c_str(), "w");
-            if (fp == NULL) {
-                fprintf(stderr, "Cannot open a pose log file -> %s\n", poseLogFile_.c_str());
-                writePose_ = false;
-            }
-        }
-
         if (scanMightInvalid_)
             return;
 
@@ -903,9 +1202,6 @@ public:
 
         yaw = tmpYaw - yaw;
         mclPose_.setPose(x, y, yaw);
-
-        if (writePose_)
-            fprintf(fp, "%lf %lf %lf %lf\n", mclPoseStamp_.toSec(), x, y, yaw);
     }
 
     void resampleParticles(void) {
@@ -1197,8 +1493,7 @@ public:
 
             tf2::Transform map2odomTrans = map2baseTrans * odom2baseTrans.inverse();
             // add transform_tolerance: send a transform that is good up until a tolerance time so that odom can be used
-            // ros::Time transformExpiration = (mclPoseStamp_ + ros::Duration(transformTolerance_));
-            ros::Time transformExpiration = (ros::Time::now() + ros::Duration(transformTolerance_));
+            ros::Time transformExpiration = (mclPoseStamp_ + ros::Duration(transformTolerance_));
             geometry_msgs::TransformStamped map2odomStampedTrans;
             map2odomStampedTrans.header.stamp = transformExpiration;
             map2odomStampedTrans.header.frame_id = mapFrame_;
@@ -1206,10 +1501,8 @@ public:
             tf2::convert(map2odomTrans, map2odomStampedTrans.transform);
             tfBroadcaster_.sendTransform(map2odomStampedTrans);
         } else {
-            // ros::Time transformExpiration = (mclPoseStamp_ + ros::Duration(transformTolerance_));
-            ros::Time transformExpiration = (ros::Time::now() + ros::Duration(transformTolerance_));
             geometry_msgs::TransformStamped map2baseStampedTrans;
-            map2baseStampedTrans.header.stamp = transformExpiration;
+            map2baseStampedTrans.header.stamp = mclPoseStamp_;
             map2baseStampedTrans.header.frame_id = mapFrame_;
             map2baseStampedTrans.child_frame_id = baseLinkFrame_;
             tf2::convert(map2baseTrans, map2baseStampedTrans.transform);
