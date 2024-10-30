@@ -1557,7 +1557,8 @@ private:
     }
 
     void resetReliabilities(void) {
-        reliabilities_.resize(particlesNum_, 0.5);
+        reliabilities_.resize(particlesNum_);
+        std::fill(reliabilities_.begin(), reliabilities_.end(), 0.5);
     }
 
     void rejectUnknownScan(void) {
