@@ -302,6 +302,7 @@ class MRFFD : public rclcpp::Node
     {
         std::vector<double> validResidualErrors;
         std::vector<int> validScanIndices;
+        int offMapReturnsNum = 0;
         for (int i = 0; i < (int)residualErrors_.intensities.size(); ++i)
         {
             double e = residualErrors_.intensities[i];
@@ -310,6 +311,10 @@ class MRFFD : public rclcpp::Node
                 validResidualErrors.push_back(e);
                 validScanIndices.push_back(i);
             }
+            else if (e < 0.0 && isLidarReturn(residualErrors_.ranges[i]))
+            {
+                offMapReturnsNum++;
+            }
         }
 
         int validResidualErrorsSize = (int)validResidualErrors.size();
@@ -317,8 +322,9 @@ class MRFFD : public rclcpp::Node
         {
             std::cerr << "WARNING: Number of validResidualErrors is less than the expected threshold number."
                       << " The threshold is " << minValidResidualErrorsNum_
-                      << ", but the number of validResidualErrors " << validResidualErrorsSize << "." << std::endl;
-            failureProbability_ = -1.0;
+                      << ", but the number of validResidualErrors " << validResidualErrorsSize << ", with "
+                      << offMapReturnsNum << " off-map returns." << std::endl;
+            failureProbability_ = offMapReturnsNum > minValidResidualErrorsNum_ ? 1.0 : -1.0;
             return;
         }
         else if (validResidualErrorsSize <= maxResidualErrorsNum_)
@@ -449,6 +455,11 @@ class MRFFD : public rclcpp::Node
     void occlusionScoreCB(const std_msgs::msg::Float32::SharedPtr &msg)
     {
         occlusionScore_ = msg->data;
+    }
+
+    inline bool isLidarReturn(float range)
+    {
+        return residualErrors_.range_min < range && range < residualErrors_.range_max;
     }
 
     inline double calculateNormalDistribution(double e)
